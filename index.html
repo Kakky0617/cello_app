@@ -5,53 +5,32 @@
     <title>Cello Fingering Player</title>
     <style>
         body { font-family: sans-serif; text-align: center; background: #f0f0f0; }
-        canvas { background: #fff; border: 2px solid #333; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        canvas { background: #fff; border: 2px solid #333; margin-top: 20px; }
         .controls { margin: 20px; padding: 15px; background: white; display: inline-block; border-radius: 10px; }
-        button { padding: 12px 24px; font-size: 16px; cursor: pointer; border-radius: 5px; border: 1px solid #999; margin: 5px; }
-        #soundToggle { background: #ffeb3b; font-weight: bold; }
-        #soundToggle.on { background: #4caf50; color: white; }
-        #playBtn { background: #2196f3; color: white; }
     </style>
 </head>
 <body>
-    <h2>Cello Fingering Simulator</h2>
+    <h2>Cello Fingering Simulator (41-56)</h2>
     <div class="controls">
         <button id="soundToggle">🔇 音をオンにする</button>
         <button id="playBtn">再生 / 一時停止</button>
-        <div style="font-size: 20px; margin-top: 10px;">現在の小節: <span id="measureNum">-</span></div>
+        <div style="font-size: 20px; margin-top: 10px;">現在の小節: <span id="measureNum">41</span></div>
     </div>
     <br>
     <canvas id="celloCanvas" width="800" height="250"></canvas>
 
     <script>
-        // データの小節番号(m)をそのまま表示するシンプルなデータ構造
+        // 練習番号B（41小節）からのデータをここに入れる
         const scoreData = [
-            {"string": 0, "pos": 7, "finger": 4, "label": "C", "m": 33, "note": "G2"},
-            {"string": 1, "pos": 2, "finger": 1, "label": "G", "m": 33, "note": "A2"},
-            {"string": 1, "pos": 4, "finger": 3, "label": "G", "m": 33, "note": "B2"},
-            {"string": 1, "pos": 5, "finger": 4, "label": "G", "m": 34, "note": "C3"},
-            {"string": 2, "pos": 2, "finger": 1, "label": "D", "m": 34, "note": "E3"},
-            {"string": 2, "pos": 4, "finger": 3, "label": "D", "m": 34, "note": "F#3"},
-            {"string": 2, "pos": 5, "finger": 4, "label": "D", "m": 35, "note": "G3"},
-            {"string": 2, "pos": 4, "finger": 3, "label": "D", "m": 35, "note": "F#3"},
-            {"string": 2, "pos": 2, "finger": 1, "label": "D", "m": 35, "note": "E3"},
-            {"string": 2, "pos": 0, "finger": 0, "label": "D", "m": 36, "note": "D3"},
-            {"string": 1, "pos": 4, "finger": 3, "label": "G", "m": 36, "note": "B2"},
-            {"string": 1, "pos": 2, "finger": 1, "label": "G", "m": 36, "note": "A2"},
-            {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 37, "note": "G2"},
-            {"string": 0, "pos": 7, "finger": 4, "label": "C", "m": 37, "note": "G2"},
-            {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 38, "note": "G2"},
-            {"string": 1, "pos": 2, "finger": 1, "label": "G", "m": 38, "note": "A2"},
-            {"string": 1, "pos": 4, "finger": 3, "label": "G", "m": 39, "note": "B2"},
-            {"string": 2, "pos": 0, "finger": 0, "label": "D", "m": 39, "note": "D3"},
-            {"string": 2, "pos": 2, "finger": 1, "label": "D", "m": 40, "note": "E3"}
+            {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 41, "note": "G2"},
+            {"string": 1, "pos": 2, "finger": 1, "label": "G", "m": 41, "note": "A2"}
+            // ※ここに追加データを書き足してください
         ];
 
         let audioCtx = null, isSoundOn = false, isPlaying = false, currentIndex = 0;
         const canvas = document.getElementById('celloCanvas');
         const ctx = canvas.getContext('2d');
 
-        // 音の周波数変換・再生ロジック
         const noteToFreq = (note) => {
             const notes = { 'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5, 'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11 };
             const name = note.replace(/[0-9]/g, '');
@@ -68,25 +47,19 @@
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
             gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.8);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.8);
         };
 
         const draw = (data) => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            // 指板の構造
-            ctx.strokeStyle = '#000'; ctx.lineWidth = 5;
-            ctx.beginPath(); ctx.moveTo(40, 30); ctx.lineTo(40, 220); ctx.stroke();
+            ctx.strokeStyle = '#000'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(40, 30); ctx.lineTo(40, 220); ctx.stroke();
             ctx.strokeStyle = '#aaa'; ctx.lineWidth = 2;
             for(let i=0; i<4; i++) {
                 ctx.beginPath(); ctx.moveTo(40, 50 + i*50); ctx.lineTo(780, 50 + i*50); ctx.stroke();
             }
-            // 現在の指位置
             if(data) {
-                const x = 40 + data.pos * 80;
-                const y = 50 + data.string * 50;
+                const x = 40 + data.pos * 80; const y = 50 + data.string * 50;
                 ctx.fillStyle = '#e91e63'; ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI*2); ctx.fill();
                 ctx.fillStyle = 'white'; ctx.fillText(data.finger, x-6, y+7);
                 ctx.fillStyle = '#000'; ctx.fillText(data.note, x-15, y-30);
@@ -96,7 +69,6 @@
         const nextNote = () => {
             if(!isPlaying) return;
             const data = scoreData[currentIndex];
-            // 表示ロジック：データ内の "m" を直接表示する
             document.getElementById('measureNum').innerText = data.m;
             draw(data);
             playTone(noteToFreq(data.note));
@@ -108,7 +80,6 @@
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             isSoundOn = !isSoundOn;
             this.innerText = isSoundOn ? "🔊 音: ON" : "🔇 音: OFF";
-            this.className = isSoundOn ? "on" : "";
         };
 
         document.getElementById('playBtn').onclick = () => {
@@ -116,6 +87,11 @@
             isPlaying = !isPlaying;
             if(isPlaying) nextNote();
         };
+
+        draw(scoreData[0]);
+    </script>
+</body>
+</html>
 
         draw(scoreData[0]);
     </script>
