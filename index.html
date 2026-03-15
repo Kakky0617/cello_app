@@ -108,14 +108,20 @@
             }
         };
 
-        const nextNote = () => {
-            if(!isPlaying) return;
-            const data = scoreData[currentIndex];
-            draw(data);
-            playTone(noteToFreq(data.note));
-            currentIndex = (currentIndex + 1) % scoreData.length;
-            setTimeout(nextNote, 1000); // 1秒間隔（ブラームス用に少しゆったり）
-        };
+       // --- 修正版：小節番号をデータから直接読み取る ---
+const nextNote = () => {
+    if(!isPlaying) return;
+    const data = scoreData[currentIndex];
+    
+    // 小節表示をデータの内容に合わせて更新
+    document.getElementById('measureNum').innerText = data.m;
+    
+    draw(data);
+    playTone(noteToFreq(data.note));
+    
+    currentIndex = (currentIndex + 1) % scoreData.length;
+    setTimeout(nextNote, 1000); 
+};
 
         document.getElementById('soundToggle').onclick = function() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -124,10 +130,13 @@
             this.className = isSoundOn ? "on" : "";
         };
 
-        document.getElementById('playBtn').onclick = () => {
-            isPlaying = !isPlaying;
-            if(isPlaying) nextNote();
-        };
+       document.getElementById('playBtn').onclick = () => {
+    if (!isPlaying) {
+        currentIndex = 0; // 再生開始時に必ず最初からにする
+    }
+    isPlaying = !isPlaying;
+    if(isPlaying) nextNote();
+};
 
         draw(scoreData[0]);
     </script>
