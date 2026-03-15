@@ -22,10 +22,12 @@
     <script>
         // 練習番号B（41小節）からのデータをここに入れる
         const scoreData = [
-            {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 41, "note": "G2"},
-            {"string": 1, "pos": 2, "finger": 1, "label": "G", "m": 41, "note": "A2"}
-            // ※ここに追加データを書き足してください
-        ];
+    {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 41, "note": "G2"},
+    {"string": 1, "pos": 2, "finger": 1, "label": "G", "m": 41, "note": "A2"},
+    // ここに 41小節〜56小節までのすべての音データをカンマ区切りで入力してください
+    // 例: {"string": 1, "pos": 4, "finger": 3, "label": "G", "m": 41, "note": "B2"},
+    // ...
+];
 
         let audioCtx = null, isSoundOn = false, isPlaying = false, currentIndex = 0;
         const canvas = document.getElementById('celloCanvas');
@@ -88,7 +90,7 @@
             if(isPlaying) nextNote();
         };
 
-        draw(scoreData[0]);
+      
     </script>
 </body>
 </html>
