@@ -82,29 +82,44 @@
         let currentIndex = 0;
         let isPlaying = false;
 
-        const draw = (data) => {
+       const draw = (data) => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = '#333';
+            
+            // 1. 弦のガイドラインを太くして見やすくする
+            ctx.strokeStyle = '#cccccc';
             for(let i=0; i<4; i++) {
-                ctx.lineWidth = 1 + i; 
+                ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.moveTo(50, 40 + i*40);
                 ctx.lineTo(750, 40 + i*40);
                 ctx.stroke();
+                
+                // 弦の名前を表示（左端に C, G, D, A を配置）
+                ctx.fillStyle = '#666';
+                ctx.font = '14px sans-serif';
+                ctx.fillText(['C', 'G', 'D', 'A'][i], 20, 45 + i*40);
             }
+            
+            // 2. 赤い指の表示（現在の音）
             if(data) {
                 const x = 50 + data.pos * 40;
                 const y = 40 + data.string * 40;
+                
+                // 指の位置を強調するサークル
                 ctx.fillStyle = '#e91e63';
                 ctx.beginPath();
-                ctx.arc(x, y, 16, 0, Math.PI*2);
+                ctx.arc(x, y, 18, 0, Math.PI*2);
                 ctx.fill();
+                
+                // 指番号を大きく中央に
                 ctx.fillStyle = 'white';
-                ctx.font = 'bold 16px sans-serif';
+                ctx.font = 'bold 18px sans-serif';
                 ctx.fillText(data.finger, x-5, y+6);
-                ctx.fillStyle = 'black';
-                ctx.fillText(data.note, x-10, y-22);
-                document.getElementById('measureNum').innerText = data.m;
+                
+                // 音名を上に表示
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 20px sans-serif';
+                ctx.fillText(data.note, x-15, y-25);
             }
         };
 
