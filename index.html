@@ -2,132 +2,134 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cello Fingering Simulator</title>
+    <title>Cello Fingering Player</title>
     <style>
-        body { font-family: sans-serif; background: #222; color: white; display: flex; flex-direction: column; align-items: center; margin: 0; touch-action: manipulation; }
-        #info { margin-top: 10px; text-align: center; height: 60px; }
-        #board-container { position: relative; width: 300px; height: 600px; background: #3d2b1f; border-left: 10px solid #222; border-right: 10px solid #222; margin: 20px 0; border-radius: 5px; }
-        .string { position: absolute; top: 0; bottom: 0; width: 2px; background: #aaa; box-shadow: 1px 0 2px rgba(0,0,0,0.5); }
-        .fret { position: absolute; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.2); }
-        #finger { position: absolute; width: 30px; height: 30px; border-radius: 50%; background: #ff4444; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; transform: translate(-50%, -50%); transition: all 0.1s ease; box-shadow: 0 0 10px #ff4444; z-index: 10; }
-        #controls { display: flex; gap: 10px; margin-bottom: 20px; }
-        button { padding: 15px 25px; font-size: 18px; cursor: pointer; border-radius: 8px; border: none; background: #444; color: white; }
-        button:active { background: #666; }
-        #progress { width: 80%; margin-bottom: 20px; }
+        body { font-family: sans-serif; text-align: center; background: #f0f0f0; padding-top: 20px; }
+        canvas { background: #fff; border: 1px solid #ccc; max-width: 100%; height: auto; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .controls { margin: 20px; padding: 15px; background: white; display: inline-block; border-radius: 10px; }
+        button { padding: 12px 24px; font-size: 16px; cursor: pointer; border-radius: 5px; border: 1px solid #999; margin: 0 5px; transition: 0.3s; }
+        #soundToggle { background: #ffeb3b; font-weight: bold; }
+        #soundToggle.on { background: #4caf50; color: white; }
+        #playBtn { background: #2196f3; color: white; border: none; }
+        #playBtn:hover { background: #1976d2; }
+        .info-panel { font-size: 18px; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="info">
-    <h2 id="note-display">READY</h2>
-    <div id="measure-display">小節: -</div>
-</div>
-
-<div id="board-container" id="fretboard">
-    <div class="string" style="left: 20%;"></div>
-    <div class="string" style="left: 40%;"></div>
-    <div class="string" style="left: 60%;"></div>
-    <div class="string" style="left: 80%;"></div>
+    <h2>Cello Fingering Simulator (Audio)</h2>
     
-    <div id="finger" style="display: none;"></div>
-</div>
+    <div class="controls">
+        <button id="soundToggle">🔇 音をオンにする</button>
+        <button id="playBtn">再生 / 一時停止</button>
+        <div class="info-panel">現在の小節: <span id="measureNum">1</span></div>
+    </div>
 
-<input type="range" id="progress" min="0" value="0" step="1">
+    <br>
+    <canvas id="celloCanvas" width="800" height="200"></canvas>
 
-<div id="controls">
-    <button onclick="prev()">前へ</button>
-    <button id="playBtn" onclick="togglePlay()">再生</button>
-    <button onclick="next()">次へ</button>
-</div>
+    <script>
+        // --- ブラームス 第4番 第4楽章 練習番号B付近のデータ ---
+        const scoreData = [
+            {"string": 0, "pos": 7, "finger": 4, "label": "C", "m": 33, "note": "G2"},
+            {"string": 1, "pos": 2, "finger": 1, "label": "G", "m": 33, "note": "A2"},
+            {"string": 1, "pos": 4, "finger": 3, "label": "G", "m": 33, "note": "B2"},
+            {"string": 1, "pos": 5, "finger": 4, "label": "G", "m": 34, "note": "C3"},
+            {"string": 2, "pos": 2, "finger": 1, "label": "D", "m": 34, "note": "E3"},
+            {"string": 2, "pos": 4, "finger": 3, "label": "D", "m": 34, "note": "F#3"},
+            {"string": 2, "pos": 5, "finger": 4, "label": "D", "m": 35, "note": "G3"},
+            {"string": 2, "pos": 4, "finger": 3, "label": "D", "m": 35, "note": "F#3"},
+            {"string": 2, "pos": 2, "finger": 1, "label": "D", "m": 35, "note": "E3"},
+            {"string": 2, "pos": 0, "finger": 0, "label": "D", "m": 36, "note": "D3"},
+            {"string": 1, "pos": 4, "finger": 3, "label": "G", "m": 36, "note": "B2"},
+            {"string": 1, "pos": 2, "finger": 1, "label": "G", "m": 36, "note": "A2"},
+            {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 37, "note": "G2"},
+            {"string": 0, "pos": 7, "finger": 4, "label": "C", "m": 37, "note": "G2"},
+            {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 38, "note": "G2"},
+            {"string": 1, "pos": 2, "finger": 1, "label": "G", "m": 38, "note": "A2"},
+            {"string": 1, "pos": 4, "finger": 3, "label": "G", "m": 39, "note": "B2"},
+            {"string": 2, "pos": 0, "finger": 0, "label": "D", "m": 39, "note": "D3"},
+            {"string": 2, "pos": 2, "finger": 1, "label": "D", "m": 40, "note": "E3"}
+        ];
 
-<script>
-const scoreData = [{"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 1, "note": "E3"}, {"string": 0, "pos": 4, "finger": 4, "label": "C", "m": 1, "note": "E2"}, {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 1, "note": "G2"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 1, "note": "B2"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 1, "note": "E3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 1, "note": "G3"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 2, "note": "F#3"}, {"string": 0, "pos": 6, "finger": 2, "label": "C", "m": 2, "note": "F#2"}, {"string": 1, "pos": 2, "finger": 2, "label": "G", "m": 2, "note": "A2"}, {"string": 1, "pos": 5, "finger": 1, "label": "G", "m": 2, "note": "C3"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 2, "note": "F#3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 2, "note": "A3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 3, "note": "G3"}, {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 3, "note": "G2"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 3, "note": "B2"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 3, "note": "E3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 3, "note": "G3"}, {"string": 3, "pos": 2, "finger": 2, "label": "A", "m": 3, "note": "B3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 4, "note": "A3"}, {"string": 1, "pos": 2, "finger": 2, "label": "G", "m": 4, "note": "A2"}, {"string": 1, "pos": 5, "finger": 1, "label": "G", "m": 4, "note": "C3"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 4, "note": "F#3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 4, "note": "A3"}, {"string": 3, "pos": 3, "finger": 3, "label": "A", "m": 4, "note": "C4"}, {"string": 3, "pos": 1, "finger": 1, "label": "A", "m": 5, "note": "A#3"}, {"string": 1, "pos": 3, "finger": 3, "label": "G", "m": 5, "note": "A#2"}, {"string": 1, "pos": 6, "finger": 2, "label": "G", "m": 5, "note": "C#3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 5, "note": "E3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 5, "note": "G3"}, {"string": 3, "pos": 7, "finger": 3, "label": "A", "m": 5, "note": "E4"}, {"string": 3, "pos": 2, "finger": 2, "label": "A", "m": 6, "note": "B3"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 6, "note": "B2"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 6, "note": "E3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 6, "note": "G3"}, {"string": 3, "pos": 1, "finger": 1, "label": "A", "m": 6, "note": "A#3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 6, "note": "E3"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 7, "note": "B2"}, {"string": 0, "pos": 6, "finger": 2, "label": "C", "m": 7, "note": "F#2"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 7, "note": "B2"}, {"string": 2, "pos": 1, "finger": 1, "label": "D", "m": 7, "note": "D#3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 7, "note": "A3"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 7, "note": "F#3"}, {"string": 0, "pos": 4, "finger": 4, "label": "C", "m": 8, "note": "E2"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 8, "note": "B2"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 8, "note": "A3"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 8, "note": "F#3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 8, "note": "G3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 8, "note": "E3"}, {"string": 0, "pos": 4, "finger": 4, "label": "C", "m": 9, "note": "E2"}, {"string": 2, "pos": 1, "finger": 1, "label": "D", "m": 9, "note": "D#3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 9, "note": "A3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 9, "note": "G3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 9, "note": "E3"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 9, "note": "B2"}, {"string": 0, "pos": 4, "finger": 4, "label": "C", "m": 9, "note": "E2"}, {"string": 0, "pos": 6, "finger": 2, "label": "C", "m": 10, "note": "F#2"}, {"string": 1, "pos": 5, "finger": 1, "label": "G", "m": 10, "note": "C3"}, {"string": 3, "pos": 2, "finger": 2, "label": "A", "m": 10, "note": "B3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 10, "note": "A3"}, {"string": 2, "pos": 1, "finger": 1, "label": "D", "m": 10, "note": "E-3"}, {"string": 1, "pos": 5, "finger": 1, "label": "G", "m": 10, "note": "C3"}, {"string": 0, "pos": 6, "finger": 2, "label": "C", "m": 10, "note": "F#2"}, {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 11, "note": "G2"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 11, "note": "F#3"}, {"string": 3, "pos": 3, "finger": 3, "label": "A", "m": 11, "note": "C4"}, {"string": 3, "pos": 2, "finger": 2, "label": "A", "m": 11, "note": "B3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 11, "note": "G3"}, {"string": 2, "pos": 0, "finger": 0, "label": "D", "m": 11, "note": "D3"}, {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 11, "note": "G2"}, {"string": 1, "pos": 2, "finger": 2, "label": "G", "m": 12, "note": "A2"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 12, "note": "E3"}, {"string": 3, "pos": 5, "finger": 1, "label": "A", "m": 12, "note": "D4"}, {"string": 3, "pos": 3, "finger": 3, "label": "A", "m": 12, "note": "C4"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 12, "note": "A3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 12, "note": "E3"}, {"string": 1, "pos": 2, "finger": 2, "label": "G", "m": 12, "note": "A2"}, {"string": 1, "pos": 3, "finger": 3, "label": "G", "m": 13, "note": "A#2"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 13, "note": "E3"}, {"string": 3, "pos": 5, "finger": 1, "label": "A", "m": 13, "note": "D4"}, {"string": 3, "pos": 4, "finger": 4, "label": "A", "m": 13, "note": "C#4"}, {"string": 3, "pos": 1, "finger": 1, "label": "A", "m": 13, "note": "A#3"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 13, "note": "F#3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 13, "note": "E3"}, {"string": 1, "pos": 6, "finger": 2, "label": "G", "m": 13, "note": "C#3"}, {"string": 1, "pos": 3, "finger": 3, "label": "G", "m": 13, "note": "A#2"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 14, "note": "B2"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 14, "note": "G3"}, {"string": 3, "pos": 9, "finger": 1, "label": "A", "m": 14, "note": "F#4"}, {"string": 3, "pos": 7, "finger": 3, "label": "A", "m": 14, "note": "E4"}, {"string": 3, "pos": 4, "finger": 4, "label": "A", "m": 14, "note": "C#4"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 14, "note": "A3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 14, "note": "G3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 14, "note": "E3"}, {"string": 1, "pos": 6, "finger": 2, "label": "G", "m": 14, "note": "C#3"}, {"string": 2, "pos": 0, "finger": 0, "label": "D", "m": 15, "note": "D3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 15, "note": "A3"}, {"string": 3, "pos": 10, "finger": 2, "label": "A", "m": 15, "note": "G4"}, {"string": 3, "pos": 9, "finger": 1, "label": "A", "m": 15, "note": "F#4"}, {"string": 3, "pos": 6, "finger": 2, "label": "A", "m": 15, "note": "D#4"}, {"string": 3, "pos": 2, "finger": 2, "label": "A", "m": 15, "note": "B3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 15, "note": "A3"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 15, "note": "F#3"}, {"string": 2, "pos": 1, "finger": 1, "label": "D", "m": 15, "note": "D#3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 16, "note": "E3"}, {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 16, "note": "G2"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 16, "note": "B2"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 16, "note": "F#3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 16, "note": "E3"}, {"string": 3, "pos": 3, "finger": 3, "label": "A", "m": 17, "note": "C4"}, {"string": 3, "pos": 12, "finger": 4, "label": "A", "m": 17, "note": "A4"}, {"string": 3, "pos": 10, "finger": 2, "label": "A", "m": 17, "note": "G4"}, {"string": 3, "pos": 9, "finger": 1, "label": "A", "m": 17, "note": "F#4"}, {"string": 3, "pos": 7, "finger": 3, "label": "A", "m": 17, "note": "E4"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 17, "note": "A3"}, {"string": 3, "pos": 9, "finger": 1, "label": "A", "m": 18, "note": "F#4"}, {"string": 3, "pos": 7, "finger": 3, "label": "A", "m": 18, "note": "E4"}, {"string": 3, "pos": 5, "finger": 1, "label": "A", "m": 18, "note": "D4"}, {"string": 3, "pos": 3, "finger": 3, "label": "A", "m": 18, "note": "C4"}, {"string": 3, "pos": 2, "finger": 2, "label": "A", "m": 18, "note": "B3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 18, "note": "G3"}, {"string": 3, "pos": 9, "finger": 1, "label": "A", "m": 19, "note": "F#4"}, {"string": 3, "pos": 15, "finger": 3, "label": "A", "m": 19, "note": "C5"}, {"string": 3, "pos": 14, "finger": 2, "label": "A", "m": 19, "note": "B4"}, {"string": 3, "pos": 12, "finger": 4, "label": "A", "m": 19, "note": "A4"}, {"string": 3, "pos": 10, "finger": 2, "label": "A", "m": 19, "note": "G4"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 19, "note": "G3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 20, "note": "A3"}, {"string": 3, "pos": 10, "finger": 2, "label": "A", "m": 20, "note": "G4"}, {"string": 3, "pos": 9, "finger": 1, "label": "A", "m": 20, "note": "F#4"}, {"string": 3, "pos": 7, "finger": 3, "label": "A", "m": 20, "note": "E4"}, {"string": 3, "pos": 6, "finger": 2, "label": "A", "m": 20, "note": "D#4"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 20, "note": "A3"}, {"string": 3, "pos": 1, "finger": 1, "label": "A", "m": 21, "note": "A#3"}, {"string": 3, "pos": 10, "finger": 2, "label": "A", "m": 21, "note": "G4"}, {"string": 3, "pos": 9, "finger": 1, "label": "A", "m": 21, "note": "F#4"}, {"string": 3, "pos": 7, "finger": 3, "label": "A", "m": 21, "note": "E4"}, {"string": 3, "pos": 9, "finger": 1, "label": "A", "m": 21, "note": "F#4"}];
-</script>
-<script>
-    let currentIndex = 0;
-    let isPlaying = false;
-    let timer = null;
+        let audioCtx = null;
+        let isSoundOn = false;
 
-    const fingerEl = document.getElementById('finger');
-    const noteEl = document.getElementById('note-display');
-    const measureEl = document.getElementById('measure-display');
-    const progressEl = document.getElementById('progress');
-    const playBtn = document.getElementById('playBtn');
+        const noteToFreq = (note) => {
+            const notes = { 'C': 0, 'C#': 1, 'D-': 1, 'D': 2, 'D#': 3, 'E-': 3, 'E': 4, 'F': 5, 'F#': 6, 'G-': 6, 'G': 7, 'G#': 8, 'A-': 8, 'A': 9, 'A#': 10, 'B-': 10, 'B': 11 };
+            const name = note.replace(/[0-9]/g, '');
+            const octave = parseInt(note.match(/[0-9]/)[0]);
+            const semitones = notes[name] + (octave - 4) * 12 + 9;
+            return 440 * Math.pow(2, semitones / 12);
+        };
 
-    // 初期設定
-    if (typeof scoreData !== 'undefined') {
-        progressEl.max = scoreData.length - 1;
-        updateView();
-    } else {
-        noteEl.innerText = "data.jsが見つかりません";
-    }
+        const playTone = (freq) => {
+            if (!audioCtx || !isSoundOn) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.8);
+        };
 
-    function updateView() {
-        const d = scoreData[currentIndex];
-        noteEl.innerText = `${d.note} (${d.label}線)`;
-        measureEl.innerText = `小節: ${d.m}`;
-        
-        // 指の位置計算 (簡易)
-        // string: 0(C), 1(G), 2(D), 3(A) -> left: 20, 40, 60, 80
-        fingerEl.style.left = (20 + d.string * 20) + "%";
-        // pos: 0-19 くらいを縦方向に配置
-        fingerEl.style.top = (5 + d.pos * 4.5) + "%";
-        fingerEl.style.display = "flex";
-        fingerEl.innerText = d.finger === 0 ? "0" : d.finger;
-        
-        // 開放弦(0)は色を変える
-        fingerEl.style.background = d.finger === 0 ? "#44bbff" : "#ff4444";
-        fingerEl.style.boxShadow = d.finger === 0 ? "0 0 10px #44bbff" : "0 0 10px #ff4444";
+        const canvas = document.getElementById('celloCanvas');
+        const ctx = canvas.getContext('2d');
+        let currentIndex = 0;
+        let isPlaying = false;
 
-        progressEl.value = currentIndex;
-    }
+        const draw = (data) => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#333';
+            for(let i=0; i<4; i++) {
+                ctx.lineWidth = 1 + i; 
+                ctx.beginPath();
+                ctx.moveTo(50, 40 + i*40);
+                ctx.lineTo(750, 40 + i*40);
+                ctx.stroke();
+            }
+            if(data) {
+                const x = 50 + data.pos * 40;
+                const y = 40 + data.string * 40;
+                ctx.fillStyle = '#e91e63';
+                ctx.beginPath();
+                ctx.arc(x, y, 16, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 16px sans-serif';
+                ctx.fillText(data.finger, x-5, y+6);
+                ctx.fillStyle = 'black';
+                ctx.fillText(data.note, x-10, y-22);
+                document.getElementById('measureNum').innerText = data.m;
+            }
+        };
 
-    function next() {
-        if (currentIndex < scoreData.length - 1) {
-            currentIndex++;
-            updateView();
-        } else {
-            stop();
-        }
-    }
+        const nextNote = () => {
+            if(!isPlaying) return;
+            const data = scoreData[currentIndex];
+            draw(data);
+            playTone(noteToFreq(data.note));
+            currentIndex = (currentIndex + 1) % scoreData.length;
+            setTimeout(nextNote, 1000); // 1秒間隔（ブラームス用に少しゆったり）
+        };
 
-    function prev() {
-        if (currentIndex > 0) {
-            currentIndex--;
-            updateView();
-        }
-    }
+        document.getElementById('soundToggle').onclick = function() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            isSoundOn = !isSoundOn;
+            this.innerText = isSoundOn ? "🔊 音: ON" : "🔇 音: OFF";
+            this.className = isSoundOn ? "on" : "";
+        };
 
-    function togglePlay() {
-        if (isPlaying) stop(); else play();
-    }
+        document.getElementById('playBtn').onclick = () => {
+            isPlaying = !isPlaying;
+            if(isPlaying) nextNote();
+        };
 
-    function play() {
-        isPlaying = true;
-        playBtn.innerText = "停止";
-        timer = setInterval(next, 600); // 0.6秒ごとに進む（パラパラ漫画）
-    }
-
-    function stop() {
-        isPlaying = false;
-        playBtn.innerText = "再生";
-        clearInterval(timer);
-    }
-
-    progressEl.oninput = function() {
-        currentIndex = parseInt(this.value);
-        updateView();
-    };
-
-    // ポジション線を引く
-    const container = document.getElementById('board-container');
-    for(let i=0; i<20; i++) {
-        const line = document.createElement('div');
-        line.className = 'fret';
-        line.style.top = (5 + i * 4.5) + "%";
-        container.appendChild(line);
-    }
-</script>
+        draw(scoreData[0]);
+    </script>
 </body>
 </html>
