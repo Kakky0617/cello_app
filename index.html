@@ -6,35 +6,44 @@
 </head>
 <body>
     <h2>音の再生テスト</h2>
-    <button id="playButton">音を鳴らす</button>
+    <button onclick="playSimpleSound()">ここをクリックして音を鳴らす</button>
 
     <script>
-    let audioCtx;
-    
-    // 下の 'playButton' という名前と、上のボタンの id が一致する必要があります
-    document.getElementById('playButton').addEventListener('click', () => {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-        
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
+        function playSimpleSound() {
+            try {
+                // コンテキストを作成（クリックの瞬間に作成するのが最も確実です）
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // ブラウザがブロックしている場合に備えて再開
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
 
-        oscillator.type = 'sawtooth'; 
-        oscillator.frequency.setValueAtTime(220, audioCtx.currentTime); // A3
-        
-        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
 
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.5);
-    });
-</script>
+                oscillator.type = 'triangle'; // サイン波より聞こえやすく、のこぎり波より耳に優しい
+                oscillator.frequency.value = 440; // はっきり聞こえる「ラ」の音
+                
+                gainNode.gain.value = 0.5; // 音量を50%に設定
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.start();
+                // 1秒間鳴らし続けます
+                setTimeout(() => {
+                    oscillator.stop();
+                    console.log("音が止まりました");
+                }, 1000);
+
+                console.log("音が鳴っているはずです。周波数:", oscillator.frequency.value);
+
+            } catch (e) {
+                console.error("エラーが発生しました:", e);
+                alert("エラー: " + e);
+            }
+        }
+    </script>
 </body>
 </html>
