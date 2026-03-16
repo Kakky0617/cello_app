@@ -29,10 +29,16 @@
 
         let currentIndex = 0;
         function updateDisplay() {
-            const display = document.getElementById('measureDisplay');
-            display.innerText = "現在の小節: " + scoreData[currentIndex].m;
-            currentIndex = (currentIndex + 1) % scoreData.length;
-        }
+    const current = scoreData[currentIndex];
+    const display = document.getElementById('measureDisplay');
+    // 小節・音名・弦・指番号を表示
+    display.innerHTML = `
+        小節: ${current.m}<br>
+        音: ${current.note}<br>
+        弦: ${current.string} / 指: ${current.finger}
+    `;
+    currentIndex = (currentIndex + 1) % scoreData.length;
+}
         setInterval(updateDisplay, 1000);
     </script>
 </body>
