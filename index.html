@@ -9,19 +9,38 @@
     <button onclick="playTestSound()">音を鳴らす</button>
 
     <script>
-        function playTestSound() {
-            // Web Audio APIのコンテキストを作成
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioCtx.createOscillator();
-            
-            // 周波数を設定（E3 = 約164.81Hz）
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(164.81, audioCtx.currentTime);
-            
-            oscillator.connect(audioCtx.destination);
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.5); // 0.5秒で止める
+    let audioCtx;
+    
+    document.getElementById('playButton').addEventListener('click', () => {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
-    </script>
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        
+        // 音を作る
+        const oscillator = audioCtx.createOscillator();
+        // 音量調節用の部品（GainNode）を作る
+        const gainNode = audioCtx.createGain();
+
+        // 波形を「のこぎり波」に変更（はっきり聞こえるようになります）
+        oscillator.type = 'sawtooth'; 
+        // A3（ラ）の音 = 220Hz に設定
+        oscillator.frequency.setValueAtTime(220, audioCtx.currentTime);
+        
+        // 音量を少し大きく設定 (0.2 くらいが適当です)
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        // 音が鳴り終わる時に少しフェードアウトさせる（ブチッというノイズ防止）
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+
+        // 接続：音源 -> 音量調整 -> 出力
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.5);
+    });
+</script>
 </body>
 </html>
