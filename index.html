@@ -85,34 +85,38 @@
         }
 
         function step() {
-            const data = scoreData[currentIndex];
-            // step()関数の中の適当な場所に追加
-document.querySelectorAll('.string-lane').forEach(el => el.classList.remove('active'));
-document.getElementById('lane-' + data.string).classList.add('active');
-            // 画面更新
-            document.getElementById('mDisplay').innerText = "小節: " + data.m;
-            document.getElementById('noteDisplay').innerText = "音名: " + data.note;
-            document.getElementById('stringDisplay').innerText = `弦: ${data.string} / 指: ${data.finger}`;
-
-            // ★追加：すべてのレーンの数字をリセットする
-            document.querySelectorAll('.string-lane').forEach(el => {
-                el.classList.remove('active');
-                el.innerText = ""; 
-            });
-            
-            // 今鳴っている弦だけを光らせる ＋ 指番号を表示
+    // ★ここを追加：音が鳴らない時、ブラウザの音声エンジンを強制的に叩き起こす
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    
+    const data = scoreData[currentIndex];
+    
+    // すべてのレーンの数字と光をリセット
+    document.querySelectorAll('.string-lane').forEach(el => {
+        el.classList.remove('active');
+        el.innerText = ""; 
+    });
+    
+    // 今鳴っている弦を光らせる ＋ 指番号を表示
     const activeLane = document.getElementById('lane-' + data.string);
     if (activeLane) {
         activeLane.classList.add('active');
-        activeLane.innerText = data.finger; // 指番号を表示！
+        activeLane.innerText = data.finger;
     }
-            // 音を鳴らす
-            playNote(noteFreqs[data.note]);
+    
+    // 画面更新
+    document.getElementById('mDisplay').innerText = "小節: " + data.m;
+    document.getElementById('noteDisplay').innerText = "音名: " + data.note;
+    document.getElementById('stringDisplay').innerText = `弦: ${data.string} / 指: ${data.finger}`;
+    
+    // 音を鳴らす
+    playNote(noteFreqs[data.note]);
 
-            // 次へ
-            currentIndex = (currentIndex + 1) % scoreData.length;
-        }
-
+    // 次へ
+    currentIndex = (currentIndex + 1) % scoreData.length;
+}
+        
         document.getElementById('startBtn').addEventListener('click', () => {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             
