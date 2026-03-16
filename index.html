@@ -2,70 +2,40 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Cello Simulator 41-56</title>
+    <title>Cello Simulator</title>
     <style>
         body { font-family: sans-serif; text-align: center; background-color: #222; color: white; }
         #container { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
         .string-lane { width: 60px; height: 200px; background: #444; border-radius: 5px; transition: background 0.1s; 
-                       display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: #fff; }
+                       display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; }
         .active { background: #ffcc00; box-shadow: 0 0 20px #ffcc00; color: #000; }
-        .info { font-size: 20px; margin: 10px; }
     </style>
 </head>
 <body>
     <h1>Cello Fingering & Sound</h1>
-    
-    <div id="display">
-        <div class="info" id="mDisplay">小節: --</div>
-        <div class="info" id="noteDisplay">音名: --</div>
-        <div class="info" id="stringDisplay">弦: -- / 指: --</div>
-    </div>
-
+    <div id="mDisplay">小節: --</div>
+    <div id="noteDisplay">音名: --</div>
+    <div id="stringDisplay">弦: -- / 指: --</div>
     <div id="container">
         <div id="lane-0" class="string-lane"></div>
         <div id="lane-1" class="string-lane"></div>
         <div id="lane-2" class="string-lane"></div>
         <div id="lane-3" class="string-lane"></div>
     </div>
-
     <br>
-    <button id="startBtn" style="font-size: 20px; padding: 10px 20px;">演奏開始</button>
-
+    <button id="startBtn">演奏開始</button>
     <script>
-        const scoreData = [
-            {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 41, "note": "E3"}, {"string": 0, "pos": 4, "finger": 4, "label": "C", "m": 41, "note": "E2"}, {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 41, "note": "G2"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 41, "note": "B2"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 41, "note": "E3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 41, "note": "G3"}, 
-            {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 42, "note": "F#3"}, {"string": 0, "pos": 6, "finger": 2, "label": "C", "m": 42, "note": "F#2"}, {"string": 1, "pos": 2, "finger": 2, "label": "G", "m": 42, "note": "A2"}, {"string": 1, "pos": 5, "finger": 1, "label": "G", "m": 42, "note": "C3"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 42, "note": "F#3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 42, "note": "A3"}
-        ]; // ※長いため一部省略していますが、実際は全データ貼り付けてください
-
-        const noteFreqs = {"E2": 82.41, "G2": 98.00, "B2": 123.47, "E3": 164.81, "F#3": 185.00, "G3": 196.00, "A3": 220.00, "C3": 130.81};
-
-        let audioCtx, currentIndex = 0, isPlaying = false, timer;
-
-        function playNote(freq) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sawtooth'; 
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-        }
+        const scoreData = [{"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 41, "note": "E3"}]; // ※データは適宜追加
+        const noteFreqs = {"E3": 164.81}; // ※他も適宜追加
+        let audioCtx, timer, currentIndex = 0, isPlaying = false;
 
         function step() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const data = scoreData[currentIndex];
             document.querySelectorAll('.string-lane').forEach(el => { el.classList.remove('active'); el.innerText = ""; });
-            
-            const activeLane = document.getElementById('lane-' + data.string);
-            if (activeLane) { activeLane.classList.add('active'); activeLane.innerText = data.finger; }
-            
+            const el = document.getElementById('lane-' + data.string);
+            if (el) { el.classList.add('active'); el.innerText = data.finger; }
             document.getElementById('mDisplay').innerText = "小節: " + data.m;
-            document.getElementById('noteDisplay').innerText = "音名: " + data.note;
-            document.getElementById('stringDisplay').innerText = `弦: ${data.string} / 指: ${data.finger}`;
-            
-            if (noteFreqs[data.note]) playNote(noteFreqs[data.note]);
-            
             currentIndex = (currentIndex + 1) % scoreData.length;
         }
 
