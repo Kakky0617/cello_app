@@ -113,9 +113,14 @@
     // 音を鳴らす
     playNote(noteFreqs[data.note]);
 
-    // 次へ
-    currentIndex = (currentIndex + 1) % scoreData.length;
-}
+   // step()関数の最後の部分をこう書き換えてください
+        
+        // 次のインデックスを計算（データ数を超えたら0に戻す）
+        currentIndex++;
+        if (currentIndex >= scoreData.length) {
+            currentIndex = 0; // 41小節の最初に戻る
+            console.log("ループします");
+        }
         
         document.getElementById('startBtn').addEventListener('click', () => {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
