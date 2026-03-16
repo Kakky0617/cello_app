@@ -2,48 +2,106 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Cello Audio Test</title>
+    <title>Cello Simulator 41-56</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f0f0f0; }
+        #display { background: white; margin: 20px auto; padding: 30px; border-radius: 15px; width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .info { font-size: 24px; margin: 10px 0; font-weight: bold; }
+        button { font-size: 20px; padding: 15px 30px; cursor: pointer; border-radius: 10px; border: none; background: #007bff; color: white; }
+        button:active { background: #0056b3; }
+    </style>
 </head>
 <body>
-    <h2>音の再生テスト</h2>
-    <button onclick="playSimpleSound()">ここをクリックして音を鳴らす</button>
+    <h1>Cello Fingering & Sound</h1>
+    
+    <div id="display">
+        <div class="info" id="mDisplay">小節: --</div>
+        <div class="info" id="noteDisplay" style="color: #e44;">音名: --</div>
+        <div class="info" id="stringDisplay">弦: -- / 指: --</div>
+    </div>
+
+    <button id="startBtn">演奏開始 / 停止</button>
 
     <script>
-        function playSimpleSound() {
-            try {
-                // コンテキストを作成（クリックの瞬間に作成するのが最も確実です）
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                
-                // ブラウザがブロックしている場合に備えて再開
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
+        // 1. 楽譜データ (41-56)
+        const scoreData = [
+            {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 41, "note": "E3"}, {"string": 0, "pos": 4, "finger": 4, "label": "C", "m": 41, "note": "E2"}, {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 41, "note": "G2"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 41, "note": "B2"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 41, "note": "E3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 41, "note": "G3"}, 
+            {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 42, "note": "F#3"}, {"string": 0, "pos": 6, "finger": 2, "label": "C", "m": 42, "note": "F#2"}, {"string": 1, "pos": 2, "finger": 2, "label": "G", "m": 42, "note": "A2"}, {"string": 1, "pos": 5, "finger": 1, "label": "G", "m": 42, "note": "C3"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 42, "note": "F#3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 42, "note": "A3"}, 
+            {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 43, "note": "G3"}, {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 43, "note": "G2"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 43, "note": "B2"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 43, "note": "E3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 43, "note": "G3"}, {"string": 3, "pos": 2, "finger": 2, "label": "A", "m": 43, "note": "B3"}, 
+            {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 44, "note": "A3"}, {"string": 1, "pos": 2, "finger": 2, "label": "G", "m": 44, "note": "A2"}, {"string": 1, "pos": 5, "finger": 1, "label": "G", "m": 44, "note": "C3"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 44, "note": "F#3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 44, "note": "A3"}, {"string": 3, "pos": 3, "finger": 3, "label": "A", "m": 44, "note": "C4"}, 
+            {"string": 3, "pos": 1, "finger": 1, "label": "A", "m": 45, "note": "A#3"}, {"string": 1, "pos": 3, "finger": 3, "label": "G", "m": 45, "note": "A#2"}, {"string": 1, "pos": 6, "finger": 2, "label": "G", "m": 45, "note": "C#3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 45, "note": "E3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 45, "note": "G3"}, {"string": 3, "pos": 7, "finger": 3, "label": "A", "m": 45, "note": "E4"}, 
+            {"string": 3, "pos": 2, "finger": 2, "label": "A", "m": 46, "note": "B3"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 46, "note": "B2"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 46, "note": "E3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 46, "note": "G3"}, {"string": 3, "pos": 1, "finger": 1, "label": "A", "m": 46, "note": "A#3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 46, "note": "E3"}, 
+            {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 47, "note": "B2"}, {"string": 0, "pos": 6, "finger": 2, "label": "C", "m": 47, "note": "F#2"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 47, "note": "B2"}, {"string": 2, "pos": 1, "finger": 1, "label": "D", "m": 47, "note": "D#3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 47, "note": "A3"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 47, "note": "F#3"}, 
+            {"string": 0, "pos": 4, "finger": 4, "label": "C", "m": 48, "note": "E2"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 48, "note": "B2"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 48, "note": "A3"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 48, "note": "F#3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 48, "note": "G3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 48, "note": "E3"}, 
+            {"string": 0, "pos": 4, "finger": 4, "label": "C", "m": 49, "note": "E2"}, {"string": 2, "pos": 1, "finger": 1, "label": "D", "m": 49, "note": "D#3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 49, "note": "A3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 49, "note": "G3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 49, "note": "E3"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 49, "note": "B2"}, {"string": 0, "pos": 4, "finger": 4, "label": "C", "m": 49, "note": "E2"}, 
+            {"string": 0, "pos": 6, "finger": 2, "label": "C", "m": 50, "note": "F#2"}, {"string": 1, "pos": 5, "finger": 1, "label": "G", "m": 50, "note": "C3"}, {"string": 3, "pos": 2, "finger": 2, "label": "A", "m": 50, "note": "B3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 50, "note": "A3"}, {"string": 2, "pos": 1, "finger": 1, "label": "D", "m": 50, "note": "D#3"}, {"string": 1, "pos": 5, "finger": 1, "label": "G", "m": 50, "note": "C3"}, {"string": 0, "pos": 6, "finger": 2, "label": "C", "m": 50, "note": "F#2"}, 
+            {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 51, "note": "G2"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 51, "note": "F#3"}, {"string": 3, "pos": 3, "finger": 3, "label": "A", "m": 51, "note": "C4"}, {"string": 3, "pos": 2, "finger": 2, "label": "A", "m": 51, "note": "B3"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 51, "note": "G3"}, {"string": 2, "pos": 0, "finger": 0, "label": "D", "m": 51, "note": "D3"}, {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 51, "note": "G2"}, 
+            {"string": 1, "pos": 2, "finger": 2, "label": "G", "m": 52, "note": "A2"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 52, "note": "E3"}, {"string": 3, "pos": 5, "finger": 1, "label": "A", "m": 52, "note": "D4"}, {"string": 3, "pos": 3, "finger": 3, "label": "A", "m": 52, "note": "C4"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 52, "note": "A3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 52, "note": "E3"}, {"string": 1, "pos": 2, "finger": 2, "label": "G", "m": 52, "note": "A2"}, 
+            {"string": 1, "pos": 3, "finger": 3, "label": "G", "m": 53, "note": "A#2"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 53, "note": "E3"}, {"string": 3, "pos": 5, "finger": 1, "label": "A", "m": 53, "note": "D4"}, {"string": 3, "pos": 4, "finger": 4, "label": "A", "m": 53, "note": "C#4"}, {"string": 3, "pos": 1, "finger": 1, "label": "A", "m": 53, "note": "A#3"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 53, "note": "F#3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 53, "note": "E3"}, {"string": 1, "pos": 6, "finger": 2, "label": "G", "m": 53, "note": "C#3"}, {"string": 1, "pos": 3, "finger": 3, "label": "G", "m": 53, "note": "A#2"}, 
+            {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 54, "note": "B2"}, {"string": 2, "pos": 5, "finger": 1, "label": "D", "m": 54, "note": "G3"}, {"string": 3, "pos": 9, "finger": 1, "label": "A", "m": 54, "note": "F#4"}, {"string": 3, "pos": 7, "finger": 3, "label": "A", "m": 54, "note": "E4"}, {"string": 3, "pos": 4, "finger": 4, "label": "A", "m": 54, "note": "C#4"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 54, "note": "A3"}, {"point": 2, "pos": 5, "finger": 1, "label": "D", "m": 54, "note": "G3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 54, "note": "E3"}, {"string": 1, "pos": 6, "finger": 2, "label": "G", "m": 54, "note": "C#3"}, 
+            {"string": 2, "pos": 0, "finger": 0, "label": "D", "m": 55, "note": "D3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 55, "note": "A3"}, {"string": 3, "pos": 10, "finger": 2, "label": "A", "m": 55, "note": "G4"}, {"string": 3, "pos": 9, "finger": 1, "label": "A", "m": 55, "note": "F#4"}, {"string": 3, "pos": 6, "finger": 2, "label": "A", "m": 55, "note": "D#4"}, {"string": 3, "pos": 2, "finger": 2, "label": "A", "m": 55, "note": "B3"}, {"string": 3, "pos": 0, "finger": 0, "label": "A", "m": 55, "note": "A3"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 55, "note": "F#3"}, {"string": 2, "pos": 1, "finger": 1, "label": "D", "m": 55, "note": "D#3"}, 
+            {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 56, "note": "E3"}, {"string": 1, "pos": 0, "finger": 0, "label": "G", "m": 56, "note": "G2"}, {"string": 1, "pos": 4, "finger": 4, "label": "G", "m": 56, "note": "B2"}, {"string": 2, "pos": 4, "finger": 4, "label": "D", "m": 56, "note": "F#3"}, {"string": 2, "pos": 2, "finger": 2, "label": "D", "m": 56, "note": "E3"}
+        ];
 
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
+        // 2. 音階と周波数の対応表
+        const noteFreqs = {
+            "E2": 82.41, "F2": 87.31, "F#2": 92.50, "G2": 98.00, "G#2": 103.83, "A2": 110.00, "A#2": 116.54, "B2": 123.47,
+            "C3": 130.81, "C#3": 138.59, "D3": 146.83, "D#3": 155.56, "E-3": 155.56, "E3": 164.81, "F3": 174.61, "F#3": 185.00, "G3": 196.00, "G#3": 207.65, "A3": 220.00, "A#3": 233.08, "B3": 246.94,
+            "C4": 261.63, "C#4": 277.18, "D4": 293.66, "D#4": 311.13, "E4": 329.63, "F4": 349.23, "F#4": 369.99, "G4": 392.00
+        };
 
-                oscillator.type = 'triangle'; // サイン波より聞こえやすく、のこぎり波より耳に優しい
-                oscillator.frequency.value = 440; // はっきり聞こえる「ラ」の音
-                
-                gainNode.gain.value = 0.5; // 音量を50%に設定
+        let audioCtx;
+        let currentIndex = 0;
+        let isPlaying = false;
+        let timer;
 
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
+        function playNote(freq) {
+            if (!freq) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sawtooth'; 
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
 
-                oscillator.start();
-                // 1秒間鳴らし続けます
-                setTimeout(() => {
-                    oscillator.stop();
-                    console.log("音が止まりました");
-                }, 1000);
-
-                console.log("音が鳴っているはずです。周波数:", oscillator.frequency.value);
-
-            } catch (e) {
-                console.error("エラーが発生しました:", e);
-                alert("エラー: " + e);
-            }
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.8);
         }
+
+        function step() {
+            const data = scoreData[currentIndex];
+            
+            // 画面更新
+            document.getElementById('mDisplay').innerText = "小節: " + data.m;
+            document.getElementById('noteDisplay').innerText = "音名: " + data.note;
+            document.getElementById('stringDisplay').innerText = `弦: ${data.string} / 指: ${data.finger}`;
+            
+            // 音を鳴らす
+            playNote(noteFreqs[data.note]);
+
+            // 次へ
+            currentIndex = (currentIndex + 1) % scoreData.length;
+        }
+
+        document.getElementById('startBtn').addEventListener('click', () => {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            if (isPlaying) {
+                clearInterval(timer);
+                isPlaying = false;
+                document.getElementById('startBtn').innerText = "演奏再開";
+            } else {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                isPlaying = true;
+                document.getElementById('startBtn').innerText = "停止";
+                timer = setInterval(step, 800); // 0.8秒ごとに進む（テンポ調整可）
+            }
+        });
     </script>
 </body>
 </html>
