@@ -4,21 +4,32 @@
     <meta charset="UTF-8">
     <title>Cello Simulator 41-56</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f0f0f0; }
-        #display { background: white; margin: 20px auto; padding: 30px; border-radius: 15px; width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .info { font-size: 24px; margin: 10px 0; font-weight: bold; }
-        button { font-size: 20px; padding: 15px 30px; cursor: pointer; border-radius: 10px; border: none; background: #007bff; color: white; }
-        button:active { background: #0056b3; }
-    </style>
+    body { font-family: sans-serif; text-align: center; background-color: #222; color: white; }
+    /* 弦を表すレーン */
+    #container { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
+    .string-lane { width: 40px; height: 200px; background: #444; border-radius: 5px; transition: background 0.1s; }
+    /* 弦の真ん中に指番号を表示 */
+    .string-lane { 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        font-size: 24px; 
+        font-weight: bold; 
+        color: #fff;
+    }
+    /* 光った時の色 */
+    .active { background: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
+</style>
 </head>
 <body>
     <h1>Cello Fingering & Sound</h1>
     
-    <div id="display">
-        <div class="info" id="mDisplay">小節: --</div>
-        <div class="info" id="noteDisplay" style="color: #e44;">音名: --</div>
-        <div class="info" id="stringDisplay">弦: -- / 指: --</div>
-    </div>
+    <div id="container">
+    <div id="lane-0" class="string-lane"></div>
+    <div id="lane-1" class="string-lane"></div>
+    <div id="lane-2" class="string-lane"></div>
+    <div id="lane-3" class="string-lane"></div>
+</div>
 
     <button id="startBtn">演奏開始 / 停止</button>
 
@@ -75,12 +86,26 @@
 
         function step() {
             const data = scoreData[currentIndex];
-            
+            // step()関数の中の適当な場所に追加
+document.querySelectorAll('.string-lane').forEach(el => el.classList.remove('active'));
+document.getElementById('lane-' + data.string).classList.add('active');
             // 画面更新
             document.getElementById('mDisplay').innerText = "小節: " + data.m;
             document.getElementById('noteDisplay').innerText = "音名: " + data.note;
             document.getElementById('stringDisplay').innerText = `弦: ${data.string} / 指: ${data.finger}`;
+
+            // ★追加：すべてのレーンの数字をリセットする
+            document.querySelectorAll('.string-lane').forEach(el => {
+                el.classList.remove('active');
+                el.innerText = ""; 
+            });
             
+            // 今鳴っている弦だけを光らせる ＋ 指番号を表示
+    const activeLane = document.getElementById('lane-' + data.string);
+    if (activeLane) {
+        activeLane.classList.add('active');
+        activeLane.innerText = data.finger; // 指番号を表示！
+    }
             // 音を鳴らす
             playNote(noteFreqs[data.note]);
 
