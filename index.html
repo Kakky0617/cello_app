@@ -2,38 +2,42 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Cello Trainer - Full Score 41-56</title>
+    <title>Cello Trainer - Thumb Position Pro</title>
     <style>
         body { font-family: sans-serif; text-align: center; background-color: #222; color: white; margin: 0; padding: 10px; }
-        .control-panel { background: #333; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .input-group { margin: 8px 0; font-size: 14px; color: #ccc; }
-        input { width: 50px; padding: 5px; font-size: 16px; border-radius: 5px; border: none; text-align: center; background: #444; color: #fff; }
-        #mDisplay { font-size: 32px; color: #ffcc00; font-weight: bold; margin: 5px 0; }
-        #noteInfo { font-size: 18px; color: #00ffcc; margin-bottom: 5px; }
+        .control-panel { background: #333; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: 1px solid #444; }
+        .input-group { margin: 8px 0; font-size: 14px; color: #aaa; }
+        input { width: 55px; padding: 6px; font-size: 16px; border-radius: 5px; border: 1px solid #555; text-align: center; background: #222; color: #fff; }
+        #mDisplay { font-size: 36px; color: #ffcc00; font-weight: bold; margin: 5px 0; text-shadow: 2px 2px 4px #000; }
+        #noteInfo { font-size: 20px; color: #00ffcc; margin-bottom: 10px; min-height: 24px; }
         
         #fb-container { position: relative; width: 320px; margin: 10px auto; }
-        .string-labels { display: flex; justify-content: space-around; padding: 0 10px; margin-bottom: 5px; font-weight: bold; color: #888; }
-        #fingerboard { position: relative; width: 300px; height: 600px; background: #3d2b1f; margin: 0 auto; border-radius: 5px; border: 4px solid #1a110a; overflow: hidden; }
+        .string-labels { display: flex; justify-content: space-around; padding: 0 10px; margin-bottom: 8px; font-weight: bold; color: #777; letter-spacing: 2px; }
+        #fingerboard { position: relative; width: 300px; height: 620px; background: #3d2b1f; margin: 0 auto; border-radius: 8px; border: 5px solid #1a110a; overflow: hidden; box-shadow: inset 0 0 50px #000; }
         
-        /* ポジション・ゾーン */
-        .zone { position: absolute; width: 100%; left: 0; opacity: 0.15; }
-        .zone-1 { top: 0; height: 180px; background-color: #44ff44; } 
-        .zone-2 { top: 180px; height: 180px; background-color: #4444ff; } 
-        .zone-3 { top: 360px; height: 240px; background-color: #ff4444; } 
+        /* ゾーン設定 */
+        .zone { position: absolute; width: 100%; left: 0; opacity: 0.18; transition: 0.3s; }
+        .zone-low { top: 0; height: 180px; background-color: #44ff44; } 
+        .zone-mid { top: 180px; height: 180px; background-color: #4444ff; } 
+        .zone-high { top: 360px; height: 260px; background-color: #ff4444; } 
         
-        .fret { position: absolute; width: 100%; height: 1px; background: rgba(255,255,255,0.2); left: 0; }
-        .string { position: absolute; width: 2px; height: 100%; background: #ccc; top: 0; box-shadow: 1px 0 2px #000; }
+        .fret { position: absolute; width: 100%; height: 1px; background: rgba(255,255,255,0.15); left: 0; }
+        .string { position: absolute; width: 3px; height: 100%; background: linear-gradient(to right, #999, #eee, #999); top: 0; box-shadow: 2px 0 5px #000; }
         
+        /* マーカー (親指対応) */
         .finger-marker { 
-            position: absolute; width: 46px; height: 46px; background: #ffcc00; 
+            position: absolute; width: 48px; height: 48px; background: #ffcc00; 
             border-radius: 50%; display: none; transform: translate(-50%, -50%);
-            align-items: center; justify-content: center; font-size: 28px; 
-            font-weight: bold; color: #000; box-shadow: 0 0 20px #ffcc00; z-index: 10;
+            align-items: center; justify-content: center; font-size: 30px; 
+            font-weight: bold; color: #000; box-shadow: 0 0 25px #ffcc00; z-index: 10;
+            border: 2px solid transparent; transition: top 0.1s, left 0.1s;
         }
+        /* サムポジション時の特殊スタイル */
+        .finger-marker.thumb-mode { border: 4px solid #fff; background: #00ffcc; box-shadow: 0 0 30px #00ffcc; }
         
-        #startBtn { font-size: 22px; padding: 12px 50px; cursor: pointer; border-radius: 30px; background: #28a745; color: white; border: none; margin-top: 10px; transition: 0.2s; }
-        #startBtn:active { transform: scale(0.95); }
-        #startBtn.playing { background: #dc3545; }
+        #startBtn { font-size: 24px; padding: 15px 60px; cursor: pointer; border-radius: 40px; background: #28a745; color: white; border: none; margin-top: 15px; box-shadow: 0 5px 0 #1e7e34; transition: 0.1s; }
+        #startBtn:active { transform: translateY(3px); box-shadow: 0 2px 0 #1e7e34; }
+        #startBtn.playing { background: #dc3545; box-shadow: 0 5px 0 #a71d2a; }
     </style>
 </head>
 <body>
@@ -43,7 +47,7 @@
             練習範囲: <input type="number" id="startM" value="41"> 〜 <input type="number" id="endM" value="56"> 小節
         </div>
         <div class="input-group">
-            テンポ: <input type="number" id="speedMs" value="600"> ms / 音
+            テンポ: <input type="number" id="speedMs" value="700"> ms / 音
         </div>
         <div id="mDisplay">小節: --</div>
         <div id="noteInfo">音名: -- (指: --)</div>
@@ -52,12 +56,12 @@
     <div id="fb-container">
         <div class="string-labels"><span>C</span><span>G</span><span>D</span><span>A</span></div>
         <div id="fingerboard">
-            <div class="zone zone-1"></div><div class="zone zone-2"></div><div class="zone zone-3"></div>
-            <div class="fret" style="top: 60px;"></div><div class="fret" style="top: 120px;"></div>
-            <div class="fret" style="top: 180px;"></div><div class="fret" style="top: 240px;"></div>
-            <div class="fret" style="top: 300px;"></div><div class="fret" style="top: 360px;"></div>
-            <div class="fret" style="top: 420px;"></div><div class="fret" style="top: 480px;"></div>
-            
+            <div class="zone zone-low"></div><div class="zone zone-mid"></div><div class="zone zone-high"></div>
+            <script>
+                for(let i=1; i<=15; i++) {
+                    document.write(`<div class="fret" style="top: ${i*40}px;"></div>`);
+                }
+            </script>
             <div class="string" style="left: 12.5%;"></div><div class="string" style="left: 37.5%;"></div>
             <div class="string" style="left: 62.5%;"></div><div class="string" style="left: 87.5%;"></div>
             <div id="marker" class="finger-marker"></div>
@@ -67,32 +71,19 @@
     <button id="startBtn">演奏開始</button>
 
     <script>
+        // finger: 0 は親指(Q)として扱う
         const scoreData = [
-            // 41-43
+            // 41-43 (Low Position)
             {"string": 2, "pos": 100, "finger": 2, "m": 41, "note": "E3"}, {"string": 0, "pos": 200, "finger": 4, "m": 41, "note": "E2"}, {"string": 1, "pos": 40, "finger": 0, "m": 41, "note": "G2"}, {"string": 1, "pos": 120, "finger": 4, "m": 41, "note": "B2"}, {"string": 2, "pos": 100, "finger": 2, "m": 41, "note": "E3"}, {"string": 2, "pos": 180, "finger": 1, "m": 41, "note": "G3"},
             {"string": 2, "pos": 140, "finger": 4, "m": 42, "note": "F#3"}, {"string": 0, "pos": 240, "finger": 2, "m": 42, "note": "F#2"}, {"string": 1, "pos": 80, "finger": 2, "m": 42, "note": "A2"}, {"string": 1, "pos": 160, "finger": 1, "m": 42, "note": "C3"}, {"string": 2, "pos": 140, "finger": 4, "m": 42, "note": "F#3"}, {"string": 3, "pos": 40, "finger": 0, "m": 42, "note": "A3"},
             {"string": 2, "pos": 180, "finger": 1, "m": 43, "note": "G3"}, {"string": 1, "pos": 40, "finger": 0, "m": 43, "note": "G2"}, {"string": 1, "pos": 120, "finger": 4, "m": 43, "note": "B2"}, {"string": 2, "pos": 100, "finger": 2, "m": 43, "note": "E3"}, {"string": 2, "pos": 180, "finger": 1, "m": 43, "note": "G3"}, {"string": 3, "pos": 80, "finger": 2, "m": 43, "note": "B3"},
-            // 44-46
-            {"string": 3, "pos": 40, "finger": 0, "m": 44, "note": "A3"}, {"string": 1, "pos": 80, "finger": 2, "m": 44, "note": "A2"}, {"string": 1, "pos": 160, "finger": 1, "m": 44, "note": "C3"}, {"string": 2, "pos": 140, "finger": 4, "m": 44, "note": "F#3"}, {"string": 3, "pos": 40, "finger": 0, "m": 44, "note": "A3"}, {"string": 3, "pos": 110, "finger": 3, "m": 44, "note": "C4"},
-            {"string": 3, "pos": 60, "finger": 1, "m": 45, "note": "A#3"}, {"string": 1, "pos": 100, "finger": 3, "m": 45, "note": "A#2"}, {"string": 1, "pos": 180, "finger": 2, "m": 45, "note": "C#3"}, {"string": 2, "pos": 100, "finger": 2, "m": 45, "note": "E3"}, {"string": 2, "pos": 180, "finger": 1, "m": 45, "note": "G3"}, {"string": 3, "pos": 280, "finger": 3, "m": 45, "note": "E4"},
-            {"string": 3, "pos": 80, "finger": 2, "m": 46, "note": "B3"}, {"string": 1, "pos": 120, "finger": 4, "m": 46, "note": "B2"}, {"string": 2, "pos": 100, "finger": 2, "m": 46, "note": "E3"}, {"string": 2, "pos": 180, "finger": 1, "m": 46, "note": "G3"}, {"string": 3, "pos": 60, "finger": 1, "m": 46, "note": "A#3"}, {"string": 2, "pos": 100, "finger": 2, "m": 46, "note": "E3"},
-            // 47-49
-            {"string": 1, "pos": 120, "finger": 4, "m": 47, "note": "B2"}, {"string": 0, "pos": 240, "finger": 2, "m": 47, "note": "F#2"}, {"string": 1, "pos": 120, "finger": 4, "m": 47, "note": "B2"}, {"string": 2, "pos": 60, "finger": 1, "m": 47, "note": "D#3"}, {"string": 3, "pos": 40, "finger": 0, "m": 47, "note": "A3"}, {"string": 2, "pos": 140, "finger": 4, "m": 47, "note": "F#3"},
-            {"string": 0, "pos": 200, "finger": 4, "m": 48, "note": "E2"}, {"string": 1, "pos": 120, "finger": 4, "m": 48, "note": "B2"}, {"string": 3, "pos": 40, "finger": 0, "m": 48, "note": "A3"}, {"string": 2, "pos": 140, "finger": 4, "m": 48, "note": "F#3"}, {"string": 2, "pos": 180, "finger": 1, "m": 48, "note": "G3"}, {"string": 2, "pos": 100, "finger": 2, "m": 48, "note": "E3"},
-            {"string": 0, "pos": 200, "finger": 4, "m": 49, "note": "E2"}, {"string": 2, "pos": 60, "finger": 1, "m": 49, "note": "D#3"}, {"string": 3, "pos": 40, "finger": 0, "m": 49, "note": "A3"}, {"string": 2, "pos": 180, "finger": 1, "m": 49, "note": "G3"}, {"string": 2, "pos": 100, "finger": 2, "m": 49, "note": "E3"}, {"string": 1, "pos": 120, "finger": 4, "m": 49, "note": "B2"},
-            // 50-52
-            {"string": 0, "pos": 240, "finger": 2, "m": 50, "note": "F#2"}, {"string": 1, "pos": 160, "finger": 1, "m": 50, "note": "C3"}, {"string": 3, "pos": 80, "finger": 2, "m": 50, "note": "B3"}, {"string": 3, "pos": 40, "finger": 0, "m": 50, "note": "A3"}, {"string": 2, "pos": 60, "finger": 1, "m": 50, "note": "D#3"}, {"string": 1, "pos": 160, "finger": 1, "m": 50, "note": "C3"},
-            {"string": 1, "pos": 40, "finger": 0, "m": 51, "note": "G2"}, {"string": 2, "pos": 140, "finger": 4, "m": 51, "note": "F#3"}, {"string": 3, "pos": 110, "finger": 3, "m": 51, "note": "C4"}, {"string": 3, "pos": 80, "finger": 2, "m": 51, "note": "B3"}, {"string": 2, "pos": 180, "finger": 1, "m": 51, "note": "G3"}, {"string": 2, "pos": 40, "finger": 0, "m": 51, "note": "D3"},
-            {"string": 1, "pos": 80, "finger": 2, "m": 52, "note": "A2"}, {"string": 2, "pos": 100, "finger": 2, "m": 52, "note": "E3"}, {"string": 3, "pos": 160, "finger": 1, "m": 52, "note": "D4"}, {"string": 3, "pos": 110, "finger": 3, "m": 52, "note": "C4"}, {"string": 3, "pos": 40, "finger": 0, "m": 52, "note": "A3"}, {"string": 2, "pos": 100, "finger": 2, "m": 52, "note": "E3"},
-            // 53-54
-            {"string": 1, "pos": 100, "finger": 3, "m": 53, "note": "A#2"}, {"string": 2, "pos": 100, "finger": 2, "m": 53, "note": "E3"}, {"string": 3, "pos": 160, "finger": 1, "m": 53, "note": "D4"}, {"string": 3, "pos": 130, "finger": 4, "m": 53, "note": "C#4"}, {"string": 3, "pos": 60, "finger": 1, "m": 53, "note": "A#3"}, {"string": 2, "pos": 140, "finger": 4, "m": 53, "note": "F#3"},
-            {"string": 1, "pos": 120, "finger": 4, "m": 54, "note": "B2"}, {"string": 2, "pos": 180, "finger": 1, "m": 54, "note": "G3"}, {"string": 3, "pos": 340, "finger": 1, "m": 54, "note": "F#4"}, {"string": 3, "pos": 280, "finger": 3, "m": 54, "note": "E4"}, {"string": 3, "pos": 130, "finger": 4, "m": 54, "note": "C#4"}, {"string": 3, "pos": 40, "finger": 0, "m": 54, "note": "A3"},
-            // 55-56
-            {"string": 2, "pos": 40, "finger": 0, "m": 55, "note": "D3"}, {"string": 3, "pos": 40, "finger": 0, "m": 55, "note": "A3"}, {"string": 3, "pos": 380, "finger": 2, "m": 55, "note": "G4"}, {"string": 3, "pos": 340, "finger": 1, "m": 55, "note": "F#4"}, {"string": 3, "pos": 220, "finger": 2, "m": 55, "note": "D#4"}, {"string": 3, "pos": 80, "finger": 2, "m": 55, "note": "B3"},
+            // 54-55 (Thumb Position Example)
+            {"string": 1, "pos": 120, "finger": 4, "m": 54, "note": "B2"}, {"string": 2, "pos": 180, "finger": 1, "m": 54, "note": "G3"}, {"string": 3, "pos": 420, "finger": 0, "m": 54, "note": "F#4"}, {"string": 3, "pos": 380, "finger": 1, "m": 54, "note": "E4"}, {"string": 3, "pos": 300, "finger": 3, "m": 54, "note": "C#4"},
+            {"string": 2, "pos": 40, "finger": 0, "m": 55, "note": "D3"}, {"string": 3, "pos": 380, "finger": 0, "m": 55, "note": "G4"}, {"string": 3, "pos": 420, "finger": 1, "m": 55, "note": "F#4"}, {"string": 3, "pos": 340, "finger": 2, "m": 55, "note": "D#4"},
             {"string": 2, "pos": 100, "finger": 2, "m": 56, "note": "E3"}, {"string": 1, "pos": 40, "finger": 0, "m": 56, "note": "G2"}, {"string": 1, "pos": 120, "finger": 4, "m": 56, "note": "B2"}, {"string": 2, "pos": 140, "finger": 4, "m": 56, "note": "F#3"}, {"string": 2, "pos": 100, "finger": 2, "m": 56, "note": "E3"}
         ];
 
-        const noteFreqs = { "E2": 82.41, "F#2": 92.50, "G2": 98.0, "A2": 110.0, "A#2": 116.54, "B2": 123.47, "C3": 130.81, "C#3": 138.59, "D3": 146.83, "D#3": 155.56, "E3": 164.81, "F#3": 185.0, "G3": 196.0, "A3": 220.0, "A#3": 233.08, "B3": 246.94, "C4": 261.63, "C#4": 277.18, "D4": 293.66, "D#4": 311.13, "E4": 329.63, "F#4": 369.99, "G4": 392.00 };
+        const noteFreqs = { "E2": 82.41, "F#2": 92.50, "G2": 98.0, "A2": 110.0, "B2": 123.47, "C3": 130.81, "D3": 146.83, "E3": 164.81, "F#3": 185.0, "G3": 196.0, "A3": 220.0, "B3": 246.94, "C#4": 277.18, "E4": 329.63, "F#4": 369.99, "G4": 392.00 };
 
         let audioCtx, timer, currentIndex = 0, isPlaying = false;
 
@@ -102,34 +93,45 @@
             const gain = audioCtx.createGain();
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
             osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-        }
-
-        function findNextIndex(idx) {
-            const startM = parseInt(document.getElementById('startM').value);
-            const endM = parseInt(document.getElementById('endM').value);
-            let nextIdx = (idx + 1) % scoreData.length;
-            if (scoreData[nextIdx].m < startM || scoreData[nextIdx].m > endM) {
-                nextIdx = scoreData.findIndex(item => item.m >= startM);
-                if (nextIdx === -1) nextIdx = 0;
-            }
-            return nextIdx;
+            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
         }
 
         function step() {
             const data = scoreData[currentIndex];
             const marker = document.getElementById('marker');
+            
+            // 位置と指の表示
             marker.style.display = "flex";
             marker.style.left = (12.5 + (data.string * 25)) + "%";
             marker.style.top = data.pos + "px";
-            marker.innerText = data.finger;
+            
+            // 指番号0ならQ（親指）を表示
+            const fingerDisplay = data.finger === 0 ? "Q" : data.finger;
+            marker.innerText = fingerDisplay;
+
+            // ハイポジション判定 (サムアップ演出)
+            if (data.pos >= 360) {
+                marker.classList.add('thumb-mode');
+            } else {
+                marker.classList.remove('thumb-mode');
+            }
+
             document.getElementById('mDisplay').innerText = "小節: " + data.m;
-            document.getElementById('noteInfo').innerText = `音名: ${data.note} (指: ${data.finger})`;
+            document.getElementById('noteInfo').innerText = `音: ${data.note} (${data.finger === 0 ? '親指' : data.finger + 'の指'})`;
+            
             if (noteFreqs[data.note]) playNote(noteFreqs[data.note]);
-            currentIndex = findNextIndex(currentIndex);
+
+            // 次のインデックス計算 (範囲ループ)
+            const startM = parseInt(document.getElementById('startM').value);
+            const endM = parseInt(document.getElementById('endM').value);
+            currentIndex = (currentIndex + 1) % scoreData.length;
+            if (scoreData[currentIndex].m < startM || scoreData[currentIndex].m > endM) {
+                currentIndex = scoreData.findIndex(item => item.m >= startM);
+                if (currentIndex === -1) currentIndex = 0;
+            }
         }
 
         document.getElementById('startBtn').addEventListener('click', () => {
@@ -140,14 +142,10 @@
                 document.getElementById('startBtn').classList.remove('playing');
             } else {
                 if (audioCtx.state === 'suspended') audioCtx.resume();
-                const startM = parseInt(document.getElementById('startM').value);
-                if (scoreData[currentIndex].m < startM || scoreData[currentIndex].m > parseInt(document.getElementById('endM').value)) {
-                    currentIndex = scoreData.findIndex(item => item.m >= startM);
-                }
                 isPlaying = true;
                 document.getElementById('startBtn').innerText = "停止";
                 document.getElementById('startBtn').classList.add('playing');
-                const speed = parseInt(document.getElementById('speedMs').value) || 600;
+                const speed = parseInt(document.getElementById('speedMs').value) || 700;
                 timer = setInterval(step, speed);
             }
         });
