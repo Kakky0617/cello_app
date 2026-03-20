@@ -2,46 +2,54 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Cello Simulator 41-56</title>
+    <title>Cello Visualizer - Fingerboard</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background-color: #222; color: white; margin: 0; padding: 20px; }
-        #container { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
-        .string-lane { width: 70px; height: 220px; background: #444; border-radius: 8px; transition: background 0.1s; 
-                       display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: bold; color: #fff; border: 2px solid #555; }
-        .active { background: #ffcc00; box-shadow: 0 0 25px #ffcc00; color: #000; border-color: #fff; }
-        .info-panel { background: #333; padding: 15px; border-radius: 10px; display: inline-block; margin-bottom: 20px; min-width: 250px; }
-        #mDisplay { font-size: 32px; color: #ffcc00; }
-        .detail { color: #aaa; font-size: 18px; margin-top: 5px; }
-        #startBtn { font-size: 24px; padding: 15px 40px; cursor: pointer; border-radius: 30px; border: none; background: #28a745; color: white; font-weight: bold; }
-        #startBtn.playing { background: #dc3545; }
+        body { font-family: sans-serif; text-align: center; background-color: #222; color: white; margin: 0; }
+        .info-panel { background: #333; padding: 10px; margin-bottom: 10px; }
+        #mDisplay { font-size: 24px; color: #ffcc00; font-weight: bold; }
+        
+        /* 指板のデザイン */
+        #fingerboard { 
+            position: relative; width: 300px; height: 500px; 
+            background: #3d2b1f; margin: 20px auto; border-radius: 10px;
+            border-left: 10px solid #222; border-right: 10px solid #222;
+        }
+        /* 弦（4本） */
+        .string { 
+            position: absolute; width: 2px; height: 100%; background: #aaa; top: 0; 
+        }
+        /* 指の位置（光る丸） */
+        .finger-marker { 
+            position: absolute; width: 40px; height: 40px; background: #ff4444; 
+            border-radius: 50%; display: none; transform: translate(-50%, -50%);
+            align-items: center; justify-content: center; font-size: 24px; 
+            font-weight: bold; color: white; box-shadow: 0 0 15px #ff4444;
+        }
+        #startBtn { font-size: 20px; padding: 10px 30px; cursor: pointer; border-radius: 20px; background: #28a745; color: white; }
     </style>
 </head>
 <body>
-    <h1>Cello Fingering & Sound</h1>
-    
     <div class="info-panel">
         <div id="mDisplay">小節: --</div>
-        <div class="detail" id="noteDisplay">音名: --</div>
-        <div class="detail" id="stringDisplay">弦: -- / 指: --</div>
+        <div id="noteInfo">音名: -- (弦: -- / 指: --)</div>
     </div>
 
-    <div id="container">
-        <div id="lane-3" class="string-lane"></div> <div id="lane-2" class="string-lane"></div> <div id="lane-1" class="string-lane"></div> <div id="lane-0" class="string-lane"></div> </div>
+    <div id="fingerboard">
+        <div class="string" style="left: 20%;"></div> <div class="string" style="left: 40%;"></div> <div class="string" style="left: 60%;"></div> <div class="string" style="left: 80%;"></div> <div id="marker" class="finger-marker"></div>
+    </div>
 
-    <p style="color: #888;">(左から A線, D線, G線, C線)</p>
-    <br>
     <button id="startBtn">演奏開始</button>
 
     <script>
-        // 41小節から56小節までのデータ（一部抜粋・ループ用）
+        // posは「ナットからの距離（高さ）」として使用
         const scoreData = [
-            {"string": 2, "finger": 2, "m": 41, "note": "E3"}, {"string": 0, "finger": 4, "m": 41, "note": "E2"}, {"string": 1, "finger": 0, "m": 41, "note": "G2"},
-            {"string": 2, "finger": 4, "m": 42, "note": "F#3"}, {"string": 0, "finger": 2, "m": 42, "note": "F#2"}, {"string": 3, "finger": 0, "m": 42, "note": "A3"},
-            {"string": 2, "finger": 1, "m": 43, "note": "G3"}, {"string": 1, "finger": 0, "m": 43, "note": "G2"}, {"string": 3, "finger": 2, "m": 43, "note": "B3"},
-            {"string": 3, "finger": 0, "m": 44, "note": "A3"}, {"string": 2, "finger": 4, "m": 44, "note": "F#3"}, {"string": 3, "finger": 3, "m": 44, "note": "C4"}
+            {"string": 2, "pos": 100, "finger": 2, "m": 41, "note": "E3"},
+            {"string": 0, "pos": 250, "finger": 4, "m": 41, "note": "E2"},
+            {"string": 1, "pos": 50, "finger": 0, "m": 41, "note": "G2"},
+            {"string": 2, "pos": 200, "finger": 4, "m": 42, "note": "F#3"}
         ];
 
-        const noteFreqs = { "E2": 82.41, "F#2": 92.50, "G2": 98.00, "A2": 110.00, "B2": 123.47, "D3": 146.83, "E3": 164.81, "F#3": 185.00, "G3": 196.00, "A3": 220.00, "B3": 246.94, "C4": 261.63 };
+        const noteFreqs = { "E2": 82.41, "G2": 98.00, "E3": 164.81, "F#3": 185.00 };
 
         let audioCtx, timer, currentIndex = 0, isPlaying = false;
 
@@ -49,28 +57,29 @@
             if (!freq || !audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'triangle'; // チェロに近い柔らかい音
+            osc.type = 'triangle';
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
             gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
             osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.6);
         }
 
         function step() {
             const data = scoreData[currentIndex];
-            document.querySelectorAll('.string-lane').forEach(el => { el.classList.remove('active'); el.innerText = ""; });
+            const marker = document.getElementById('marker');
             
-            const activeLane = document.getElementById('lane-' + data.string);
-            if (activeLane) {
-                activeLane.classList.add('active');
-                activeLane.innerText = data.finger;
-            }
-            
+            // ポジション表示の更新
+            marker.style.display = "flex";
+            // 弦の横位置 (C=20%, G=40%, D=60%, A=80%)
+            marker.style.left = (20 + (data.string * 20)) + "%";
+            // 高さ位置 (posデータを使用)
+            marker.style.top = data.pos + "px";
+            marker.innerText = data.finger;
+
             document.getElementById('mDisplay').innerText = "小節: " + data.m;
-            document.getElementById('noteDisplay').innerText = "音名: " + data.note;
-            document.getElementById('stringDisplay').innerText = `弦: ${["C","G","D","A"][data.string]}線 / 指: ${data.finger}`;
-            
+            document.getElementById('noteInfo').innerText = `音名: ${data.note} (${["C","G","D","A"][data.string]}線 / 指: ${data.finger})`;
+
             playNote(noteFreqs[data.note]);
             currentIndex = (currentIndex + 1) % scoreData.length;
         }
@@ -80,13 +89,11 @@
             if (isPlaying) {
                 clearInterval(timer); isPlaying = false;
                 document.getElementById('startBtn').innerText = "演奏再開";
-                document.getElementById('startBtn').classList.remove('playing');
             } else {
                 if (audioCtx.state === 'suspended') audioCtx.resume();
                 isPlaying = true;
                 document.getElementById('startBtn').innerText = "停止";
-                document.getElementById('startBtn').classList.add('playing');
-                timer = setInterval(step, 800);
+                timer = setInterval(step, 1000);
             }
         });
     </script>
