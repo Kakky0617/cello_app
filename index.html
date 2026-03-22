@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Cello Trainer - Full Integration</title>
+    <title>Cello Trainer - Thumb Circle Arch</title>
     <style>
         body { font-family: sans-serif; text-align: center; background-color: #222; color: white; margin: 0; padding: 10px; }
         .control-panel { background: #333; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
@@ -25,9 +25,12 @@
 
         .string { position: absolute; width: 2px; height: 100%; background: #ccc; top: 0; }
         
-        /* 手のワイヤーフレーム */
+        /* 手のワイヤーフレーム（SVG）の設定 */
         #hand-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
         .hand-line { stroke-width: 3; fill: none; stroke-linecap: round; }
+        
+        /* 親指の赤丸 */
+        #thumb-circle { fill: #ff4444; stroke: none; }
 
         .finger-marker { 
             position: absolute; width: 46px; height: 46px; background: #ffcc00; 
@@ -62,6 +65,7 @@
             <svg id="hand-svg">
                 <line id="line1" class="hand-line" x1="0" y1="0" x2="0" y2="0" stroke="rgba(255,255,255,0.5)" />
                 <line id="line2" class="hand-line" x1="0" y1="0" x2="0" y2="0" stroke="rgba(255,255,255,0.3)" />
+                <circle id="thumb-circle" cx="0" cy="0" r="8" display="none" />
             </svg>
 
             <div class="string" style="left: 12.5%;"></div><div class="string" style="left: 37.5%;"></div>
@@ -74,7 +78,6 @@
     <button id="startBtn">演奏開始</button>
 
     <script>
-        // (scoreData, noteFreqs は以前と同じため中略せず保持)
         const scoreData = [{"string": 2, "pos": 100, "finger": 2, "m": 41, "note": "E3"}, {"string": 0, "pos": 200, "finger": 4, "m": 41, "note": "E2"}, {"string": 1, "pos": 40, "finger": 0, "m": 41, "note": "G2"}, {"string": 1, "pos": 120, "finger": 4, "m": 41, "note": "B2"}, {"string": 2, "pos": 100, "finger": 2, "m": 41, "note": "E3"}, {"string": 2, "pos": 180, "finger": 1, "m": 41, "note": "G3"}, {"string": 2, "pos": 140, "finger": 4, "m": 42, "note": "F#3"}, {"string": 0, "pos": 240, "finger": 2, "m": 42, "note": "F#2"}, {"string": 1, "pos": 80, "finger": 2, "m": 42, "note": "A2"}, {"string": 1, "pos": 160, "finger": 1, "m": 42, "note": "C3"}, {"string": 2, "pos": 140, "finger": 4, "m": 42, "note": "F#3"}, {"string": 3, "pos": 40, "finger": 0, "m": 42, "note": "A3"}, {"string": 2, "pos": 180, "finger": 1, "m": 43, "note": "G3"}, {"string": 1, "pos": 40, "finger": 0, "m": 43, "note": "G2"}, {"string": 1, "pos": 120, "finger": 4, "m": 43, "note": "B2"}, {"string": 2, "pos": 100, "finger": 2, "m": 43, "note": "E3"}, {"string": 2, "pos": 180, "finger": 1, "m": 43, "note": "G3"}, {"string": 3, "pos": 80, "finger": 2, "m": 43, "note": "B3"}, {"string": 3, "pos": 40, "finger": 0, "m": 44, "note": "A3"}, {"string": 1, "pos": 80, "finger": 2, "m": 44, "note": "A2"}, {"string": 1, "pos": 160, "finger": 1, "m": 44, "note": "C3"}, {"string": 2, "pos": 140, "finger": 4, "m": 44, "note": "F#3"}, {"string": 3, "pos": 40, "finger": 0, "m": 44, "note": "A3"}, {"string": 3, "pos": 110, "finger": 3, "m": 44, "note": "C4"}, {"string": 3, "pos": 60, "finger": 1, "m": 45, "note": "A#3"}, {"string": 1, "pos": 100, "finger": 3, "m": 45, "note": "A#2"}, {"string": 1, "pos": 180, "finger": 2, "m": 45, "note": "C#3"}, {"string": 2, "pos": 100, "finger": 2, "m": 45, "note": "E3"}, {"string": 2, "pos": 180, "finger": 1, "m": 45, "note": "G3"}, {"string": 3, "pos": 280, "finger": 3, "m": 45, "note": "E4"}, {"string": 3, "pos": 80, "finger": 2, "m": 46, "note": "B3"}, {"string": 1, "pos": 120, "finger": 4, "m": 46, "note": "B2"}, {"string": 2, "pos": 100, "finger": 2, "m": 46, "note": "E3"}, {"string": 2, "pos": 180, "finger": 1, "m": 46, "note": "G3"}, {"string": 3, "pos": 60, "finger": 1, "m": 46, "note": "A#3"}, {"string": 2, "pos": 100, "finger": 2, "m": 46, "note": "E3"}, {"string": 1, "pos": 120, "finger": 4, "m": 47, "note": "B2"}, {"string": 0, "pos": 240, "finger": 2, "m": 47, "note": "F#2"}, {"string": 1, "pos": 120, "finger": 4, "m": 47, "note": "B2"}, {"string": 2, "pos": 60, "finger": 1, "m": 47, "note": "D#3"}, {"string": 3, "pos": 40, "finger": 0, "m": 47, "note": "A3"}, {"string": 2, "pos": 140, "finger": 4, "m": 47, "note": "F#3"}, {"string": 0, "pos": 200, "finger": 4, "m": 48, "note": "E2"}, {"string": 1, "pos": 120, "finger": 4, "m": 48, "note": "B2"}, {"string": 3, "pos": 40, "finger": 0, "m": 48, "note": "A3"}, {"string": 2, "pos": 140, "finger": 4, "m": 48, "note": "F#3"}, {"string": 2, "pos": 180, "finger": 1, "m": 48, "note": "G3"}, {"string": 2, "pos": 100, "finger": 2, "m": 48, "note": "E3"}, {"string": 0, "pos": 200, "finger": 4, "m": 49, "note": "E2"}, {"string": 2, "pos": 60, "finger": 1, "m": 49, "note": "D#3"}, {"string": 3, "pos": 40, "finger": 0, "m": 49, "note": "A3"}, {"string": 2, "pos": 180, "finger": 1, "m": 49, "note": "G3"}, {"string": 2, "pos": 100, "finger": 2, "m": 49, "note": "E3"}, {"string": 1, "pos": 120, "finger": 4, "m": 49, "note": "B2"}, {"string": 0, "pos": 240, "finger": 2, "m": 50, "note": "F#2"}, {"string": 1, "pos": 160, "finger": 1, "m": 50, "note": "C3"}, {"string": 3, "pos": 80, "finger": 2, "m": 50, "note": "B3"}, {"string": 3, "pos": 40, "finger": 0, "m": 50, "note": "A3"}, {"string": 2, "pos": 60, "finger": 1, "m": 50, "note": "D#3"}, {"string": 1, "pos": 160, "finger": 1, "m": 50, "note": "C3"}, {"string": 1, "pos": 40, "finger": 0, "m": 51, "note": "G2"}, {"string": 2, "pos": 140, "finger": 4, "m": 51, "note": "F#3"}, {"string": 3, "pos": 110, "finger": 3, "m": 51, "note": "C4"}, {"string": 3, "pos": 80, "finger": 2, "m": 51, "note": "B3"}, {"string": 2, "pos": 180, "finger": 1, "m": 51, "note": "G3"}, {"string": 2, "pos": 40, "finger": 0, "m": 51, "note": "D3"}, {"string": 1, "pos": 80, "finger": 2, "m": 52, "note": "A2"}, {"string": 2, "pos": 100, "finger": 2, "m": 52, "note": "E3"}, {"string": 3, "pos": 160, "finger": 1, "m": 52, "note": "D4"}, {"string": 3, "pos": 110, "finger": 3, "m": 52, "note": "C4"}, {"string": 3, "pos": 40, "finger": 0, "m": 52, "note": "A3"}, {"string": 2, "pos": 100, "finger": 2, "m": 52, "note": "E3"}, {"string": 1, "pos": 100, "finger": 3, "m": 53, "note": "A#2"}, {"string": 2, "pos": 100, "finger": 2, "m": 53, "note": "E3"}, {"string": 3, "pos": 160, "finger": 1, "m": 53, "note": "D4"}, {"string": 3, "pos": 130, "finger": 4, "m": 53, "note": "C#4"}, {"string": 3, "pos": 60, "finger": 1, "m": 53, "note": "A#3"}, {"string": 2, "pos": 140, "finger": 4, "m": 53, "note": "F#3"}, {"string": 1, "pos": 120, "finger": 4, "m": 54, "note": "B2"}, {"string": 2, "pos": 180, "finger": 1, "m": 54, "note": "G3"}, {"string": 3, "pos": 420, "finger": 0, "m": 54, "note": "F#4"}, {"string": 3, "pos": 380, "finger": 1, "m": 54, "note": "E4"}, {"string": 3, "pos": 300, "finger": 3, "m": 54, "note": "C#4"}, {"string": 2, "pos": 40, "finger": 0, "m": 55, "note": "D3"}, {"string": 3, "pos": 380, "finger": 0, "m": 55, "note": "G4"}, {"string": 3, "pos": 420, "finger": 1, "m": 55, "note": "F#4"}, {"string": 3, "pos": 340, "finger": 2, "m": 55, "note": "D#4"}, {"string": 2, "pos": 100, "finger": 2, "m": 56, "note": "E3"}, {"string": 1, "pos": 40, "finger": 0, "m": 56, "note": "G2"}, {"string": 1, "pos": 120, "finger": 4, "m": 56, "note": "B2"}, {"string": 2, "pos": 140, "finger": 4, "m": 56, "note": "F#3"}, {"string": 2, "pos": 100, "finger": 2, "m": 56, "note": "E3"}];
 
         const noteFreqs = { "E2": 82.41, "F#2": 92.50, "G2": 98.0, "A2": 110.0, "A#2": 116.54, "B2": 123.47, "C3": 130.81, "C#3": 138.59, "D3": 146.83, "D#3": 155.56, "E3": 164.81, "F#3": 185.0, "G3": 196.0, "A3": 220.0, "A#3": 233.08, "B3": 246.94, "C4": 261.63, "C#4": 277.18, "D4": 293.66, "D#4": 311.13, "E4": 329.63, "F#4": 369.99, "G4": 392.00 };
@@ -98,6 +101,7 @@
             const marker = document.getElementById('marker');
             const l1 = document.getElementById('line1');
             const l2 = document.getElementById('line2');
+            const tCircle = document.getElementById('thumb-circle');
             const fbWidth = 300;
             
             const tipX = (12.5 + (data.string * 25)) * fbWidth / 100;
@@ -113,17 +117,29 @@
             else { if (data.finger === 0) fingerVal = "0"; marker.classList.remove('thumb-mode'); }
             marker.innerText = fingerVal;
 
-            // --- 手のアーチ描画 ---
+            // --- 手のアーチ（親指赤丸版）を描画 ---
             if (fingerVal !== "0") {
-                const anchorX = tipX + 55;
+                // 手の甲の頂点を計算（指先から少し離れた位置）
+                const anchorX = tipX + 55; 
                 const anchorY = tipY + 35;
+                
+                // 親指の想定位置（ネックの裏側、くの字の先端を赤丸に）
+                const thumbX = anchorX - 25; 
+                const thumbY = anchorY + 45;
+
                 l1.setAttribute("x1", tipX); l1.setAttribute("y1", tipY);
                 l1.setAttribute("x2", anchorX); l1.setAttribute("y2", anchorY);
+                
                 l2.setAttribute("x1", anchorX); l2.setAttribute("y1", anchorY);
-                l2.setAttribute("x2", anchorX - 25); l2.setAttribute("y2", anchorY + 45);
-                l1.style.display = "block"; l2.style.display = "block";
+                l2.setAttribute("x2", thumbX); l2.setAttribute("y2", thumbY);
+                
+                // 親指の赤丸を配置
+                tCircle.setAttribute("cx", thumbX);
+                tCircle.setAttribute("cy", thumbY);
+
+                l1.style.display = "block"; l2.style.display = "block"; tCircle.style.display = "block";
             } else {
-                l1.style.display = "none"; l2.style.display = "none";
+                l1.style.display = "none"; l2.style.display = "none"; tCircle.style.display = "none";
             }
 
             document.getElementById('mDisplay').innerText = "小節: " + data.m;
