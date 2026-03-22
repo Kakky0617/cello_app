@@ -1,17 +1,8 @@
-ご不便をおかけして申し訳ありません！
-原因を確認したところ、直前のコードで**「音を出すための仕組み（AudioContext）」と「周波数データ（noteFreqs）」が丸ごと抜けてしまっていた**ため、エラーが出て動かなくなっていました。
-
-これまでの全ての修正（背景色、横線、BPM変更、そして親指の赤丸）を盛り込み、確実に動作するコードにまとめ直しました。
-
-修正版：これですべて動くはずです
-以下のコードをコピーして、再度 index.html に貼り付けて保存してください。
-
-HTML
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Cello Trainer - Full Fix</title>
+    <title>Cello Trainer - Full labels & Thumb Circle</title>
     <style>
         body { font-family: sans-serif; text-align: center; background-color: #222; color: white; margin: 0; padding: 10px; }
         .control-panel { background: #333; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
@@ -19,7 +10,11 @@ HTML
         input { width: 65px; padding: 6px; font-size: 16px; border-radius: 5px; border: 1px solid #555; text-align: center; background: #222; color: #fff; }
         #mDisplay { font-size: 32px; color: #ffcc00; font-weight: bold; margin: 5px 0; }
         #noteInfo { font-size: 18px; color: #00ffcc; margin-bottom: 10px; min-height: 20px; }
+        
         #fb-container { position: relative; width: 320px; margin: 10px auto; }
+        /* 弦の名前（ラベル）を復活 */
+        .string-labels { display: flex; justify-content: space-around; padding: 0 10px; margin-bottom: 8px; font-weight: bold; color: #aaa; font-size: 18px; }
+        
         #fingerboard { position: relative; width: 300px; height: 600px; background: #3d2b1f; margin: 0 auto; border-radius: 8px; border: 5px solid #1a110a; overflow: hidden; }
         
         .zone { position: absolute; width: 100%; left: 0; opacity: 0.18; }
@@ -54,6 +49,7 @@ HTML
     </div>
 
     <div id="fb-container">
+        <div class="string-labels"><span>C</span><span>G</span><span>D</span><span>A</span></div>
         <div id="fingerboard">
             <div class="zone zone-low"></div><div class="zone zone-mid"></div><div class="zone zone-high"></div>
             <div class="fret" style="top: 60px;"></div><div class="fret" style="top: 120px;"></div>
