@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Cello Trainer - Ultimate 41-56</title>
+    <title>Cello Trainer - Hand Form Edition</title>
     <style>
         body { font-family: sans-serif; text-align: center; background-color: #222; color: white; margin: 0; padding: 10px; }
         .control-panel { background: #333; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
@@ -11,7 +11,7 @@
         #mDisplay { font-size: 32px; color: #ffcc00; font-weight: bold; margin: 5px 0; }
         #noteInfo { font-size: 18px; color: #00ffcc; margin-bottom: 10px; min-height: 20px; }
         #fb-container { position: relative; width: 320px; margin: 10px auto; }
-        .string-labels { display: flex; justify-content: space-around; padding: 0 10px; margin-bottom: 8px; font-weight: bold; color: #777; }
+        .string-labels { display: flex; justify-content: space-around; padding: 0 -10px; margin-bottom: 8px; font-weight: bold; color: #777; }
         #fingerboard { position: relative; width: 300px; height: 600px; background: #3d2b1f; margin: 0 auto; border-radius: 8px; border: 5px solid #1a110a; overflow: hidden; }
         .zone { position: absolute; width: 100%; left: 0; opacity: 0.18; }
         .zone-low { top: 0; height: 180px; background-color: #44ff44; } 
@@ -22,10 +22,16 @@
         .finger-marker { 
             position: absolute; width: 46px; height: 46px; background: #ffcc00; 
             border-radius: 50%; display: none; transform: translate(-50%, -50%);
-            align-items: center; justify-content: center; font-size: 28px; 
+            align-items: center; justify-content: center; font-size: 26px; 
             font-weight: bold; color: #000; box-shadow: 0 0 20px #ffcc00; z-index: 10;
+            transition: all 0.1s;
         }
+        /* 拡張（Extension）のスタイル */
+        .finger-marker.ext-mode { border: 4px double #fff; background: #ffaa00; }
+        .ext-label { font-size: 12px; position: absolute; bottom: -15px; color: #fff; white-space: nowrap; }
+        /* 親指のスタイル */
         .finger-marker.thumb-mode { border: 4px solid #fff; background: #00ffcc; box-shadow: 0 0 30px #00ffcc; }
+        
         #startBtn { font-size: 22px; padding: 15px 50px; cursor: pointer; border-radius: 40px; background: #28a745; color: white; border: none; margin-top: 10px; }
         #startBtn.playing { background: #dc3545; }
     </style>
@@ -60,9 +66,21 @@
     <button id="startBtn">演奏開始</button>
 
     <script>
+        // 音符データ (form: "ext" を足すことで拡張表示になります)
         const scoreData = [
-            {"string": 2, "pos": 100, "finger": 2, "m": 41, "note": "E3"}, {"string": 0, "pos": 200, "finger": 4, "m": 41, "note": "E2"}, {"string": 1, "pos": 40, "finger": 0, "m": 41, "note": "G2"}, {"string": 1, "pos": 120, "finger": 4, "m": 41, "note": "B2"}, {"string": 2, "pos": 100, "finger": 2, "m": 41, "note": "E3"}, {"string": 2, "pos": 180, "finger": 1, "m": 41, "note": "G3"},
-            {"string": 2, "pos": 140, "finger": 4, "m": 42, "note": "F#3"}, {"string": 0, "pos": 240, "finger": 2, "m": 42, "note": "F#2"}, {"string": 1, "pos": 80, "finger": 2, "m": 42, "note": "A2"}, {"string": 1, "pos": 160, "finger": 1, "m": 42, "note": "C3"}, {"string": 2, "pos": 140, "finger": 4, "m": 42, "note": "F#3"}, {"string": 3, "pos": 40, "finger": 0, "m": 42, "note": "A3"},
+            {"string": 2, "pos": 100, "finger": 2, "m": 41, "note": "E3"}, 
+            {"string": 0, "pos": 200, "finger": 4, "m": 41, "note": "E2"}, 
+            {"string": 1, "pos": 40, "finger": 0, "m": 41, "note": "G2"}, 
+            {"string": 1, "pos": 120, "finger": 4, "m": 41, "note": "B2", "form": "ext"}, // 例として拡張に設定
+            {"string": 2, "pos": 100, "finger": 2, "m": 41, "note": "E3"}, 
+            {"string": 2, "pos": 180, "finger": 1, "m": 41, "note": "G3"},
+            {"string": 2, "pos": 140, "finger": 4, "m": 42, "note": "F#3"}, 
+            {"string": 0, "pos": 240, "finger": 2, "m": 42, "note": "F#2"}, 
+            {"string": 1, "pos": 80, "finger": 2, "m": 42, "note": "A2"}, 
+            {"string": 1, "pos": 160, "finger": 1, "m": 42, "note": "C3"}, 
+            {"string": 2, "pos": 140, "finger": 4, "m": 42, "note": "F#3"}, 
+            {"string": 3, "pos": 40, "finger": 0, "m": 42, "note": "A3"},
+            // ... (全データ入り)
             {"string": 2, "pos": 180, "finger": 1, "m": 43, "note": "G3"}, {"string": 1, "pos": 40, "finger": 0, "m": 43, "note": "G2"}, {"string": 1, "pos": 120, "finger": 4, "m": 43, "note": "B2"}, {"string": 2, "pos": 100, "finger": 2, "m": 43, "note": "E3"}, {"string": 2, "pos": 180, "finger": 1, "m": 43, "note": "G3"}, {"string": 3, "pos": 80, "finger": 2, "m": 43, "note": "B3"},
             {"string": 3, "pos": 40, "finger": 0, "m": 44, "note": "A3"}, {"string": 1, "pos": 80, "finger": 2, "m": 44, "note": "A2"}, {"string": 1, "pos": 160, "finger": 1, "m": 44, "note": "C3"}, {"string": 2, "pos": 140, "finger": 4, "m": 44, "note": "F#3"}, {"string": 3, "pos": 40, "finger": 0, "m": 44, "note": "A3"}, {"string": 3, "pos": 110, "finger": 3, "m": 44, "note": "C4"},
             {"string": 3, "pos": 60, "finger": 1, "m": 45, "note": "A#3"}, {"string": 1, "pos": 100, "finger": 3, "m": 45, "note": "A#2"}, {"string": 1, "pos": 180, "finger": 2, "m": 45, "note": "C#3"}, {"string": 2, "pos": 100, "finger": 2, "m": 45, "note": "E3"}, {"string": 2, "pos": 180, "finger": 1, "m": 45, "note": "G3"}, {"string": 3, "pos": 280, "finger": 3, "m": 45, "note": "E4"},
@@ -74,8 +92,10 @@
             {"string": 1, "pos": 40, "finger": 0, "m": 51, "note": "G2"}, {"string": 2, "pos": 140, "finger": 4, "m": 51, "note": "F#3"}, {"string": 3, "pos": 110, "finger": 3, "m": 51, "note": "C4"}, {"string": 3, "pos": 80, "finger": 2, "m": 51, "note": "B3"}, {"string": 2, "pos": 180, "finger": 1, "m": 51, "note": "G3"}, {"string": 2, "pos": 40, "finger": 0, "m": 51, "note": "D3"},
             {"string": 1, "pos": 80, "finger": 2, "m": 52, "note": "A2"}, {"string": 2, "pos": 100, "finger": 2, "m": 52, "note": "E3"}, {"string": 3, "pos": 160, "finger": 1, "m": 52, "note": "D4"}, {"string": 3, "pos": 110, "finger": 3, "m": 52, "note": "C4"}, {"string": 3, "pos": 40, "finger": 0, "m": 52, "note": "A3"}, {"string": 2, "pos": 100, "finger": 2, "m": 52, "note": "E3"},
             {"string": 1, "pos": 100, "finger": 3, "m": 53, "note": "A#2"}, {"string": 2, "pos": 100, "finger": 2, "m": 53, "note": "E3"}, {"string": 3, "pos": 160, "finger": 1, "m": 53, "note": "D4"}, {"string": 3, "pos": 130, "finger": 4, "m": 53, "note": "C#4"}, {"string": 3, "pos": 60, "finger": 1, "m": 53, "note": "A#3"}, {"string": 2, "pos": 140, "finger": 4, "m": 53, "note": "F#3"},
-            {"string": 1, "pos": 120, "finger": 4, "m": 54, "note": "B2"}, {"string": 2, "pos": 180, "finger": 1, "m": 54, "note": "G3"}, {"string": 3, "pos": 420, "finger": 0, "m": 54, "note": "F#4"}, {"string": 3, "pos": 380, "finger": 1, "m": 54, "note": "E4"}, {"string": 3, "pos": 300, "finger": 3, "m": 54, "note": "C#4"},
-            {"string": 2, "pos": 40, "finger": 0, "m": 55, "note": "D3"}, {"string": 3, "pos": 380, "finger": 0, "m": 55, "note": "G4"}, {"string": 3, "pos": 420, "finger": 1, "m": 55, "note": "F#4"}, {"string": 3, "pos": 340, "finger": 2, "m": 55, "note": "D#4"},
+            {"string": 1, "pos": 120, "finger": 4, "m": 54, "note": "B2"}, {"string": 2, "pos": 180, "finger": 1, "m": 54, "note": "G3"}, {"string": 3, "pos": 420, "finger": 0, "m": 54, "note": "F#4", "form": "thumb"}, 
+            {"string": 3, "pos": 380, "finger": 1, "m": 54, "note": "E4"}, {"string": 3, "pos": 300, "finger": 3, "m": 54, "note": "C#4"},
+            {"string": 2, "pos": 40, "finger": 0, "m": 55, "note": "D3"}, {"string": 3, "pos": 380, "finger": 0, "m": 55, "note": "G4", "form": "thumb"}, 
+            {"string": 3, "pos": 420, "finger": 1, "m": 55, "note": "F#4"}, {"string": 3, "pos": 340, "finger": 2, "m": 55, "note": "D#4"},
             {"string": 2, "pos": 100, "finger": 2, "m": 56, "note": "E3"}, {"string": 1, "pos": 40, "finger": 0, "m": 56, "note": "G2"}, {"string": 1, "pos": 120, "finger": 4, "m": 56, "note": "B2"}, {"string": 2, "pos": 140, "finger": 4, "m": 56, "note": "F#3"}, {"string": 2, "pos": 100, "finger": 2, "m": 56, "note": "E3"}
         ];
 
@@ -102,59 +122,10 @@
             marker.style.left = (12.5 + (data.string * 25)) + "%";
             marker.style.top = data.pos + "px";
             
+            // 指番号とフォームの判定
             let fingerVal = data.finger;
+            marker.classList.remove('thumb-mode', 'ext-mode');
+            
             if (data.finger === 0) {
-                if (data.pos >= 360) {
-                    fingerVal = "Q"; // ハイポジションは親指
-                    marker.classList.add('thumb-mode');
-                } else {
-                    fingerVal = "0"; // ローポジションは開放弦
-                    marker.classList.remove('thumb-mode');
-                }
-            } else {
-                marker.classList.remove('thumb-mode');
-            }
-            marker.innerText = fingerVal;
-
-            document.getElementById('mDisplay').innerText = "小節: " + data.m;
-            document.getElementById('noteInfo').innerText = `音: ${data.note} (${fingerVal === 'Q' ? '親指' : fingerVal === '0' ? '開放' : fingerVal + 'の指'})`;
-
-            if (noteFreqs[data.note]) playNote(noteFreqs[data.note]);
-
-            const startM = parseInt(document.getElementById('startM').value);
-            const endM = parseInt(document.getElementById('endM').value);
-            currentIndex = (currentIndex + 1) % scoreData.length;
-            if (scoreData[currentIndex].m < startM || scoreData[currentIndex].m > endM) {
-                currentIndex = scoreData.findIndex(item => item.m >= startM);
-                if (currentIndex === -1) currentIndex = 0;
-            }
-        }
-
-        function updateTimer() {
-            if (timer) clearInterval(timer);
-            const bpmValue = parseInt(document.getElementById('bpm').value) || 80;
-            const intervalMs = 60000 / bpmValue;
-            timer = setInterval(step, intervalMs);
-        }
-
-        document.getElementById('bpm').addEventListener('input', () => {
-            if (isPlaying) updateTimer();
-        });
-
-        document.getElementById('startBtn').addEventListener('click', () => {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (isPlaying) {
-                clearInterval(timer); isPlaying = false;
-                document.getElementById('startBtn').innerText = "演奏再開";
-                document.getElementById('startBtn').classList.remove('playing');
-            } else {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                isPlaying = true;
-                document.getElementById('startBtn').innerText = "停止";
-                document.getElementById('startBtn').classList.add('playing');
-                updateTimer();
-            }
-        });
-    </script>
-</body>
-</html>
+                if (data.pos >= 360 || data.form === "thumb") {
+                    fingerVal = "Q";
