@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Cello Trainer - Ver.4 Complete</title>
+    <title>Cello Trainer - Ver.4.1 Complete</title>
     <style>
         body { font-family: sans-serif; text-align: center; background-color: #222; color: white; margin: 0; padding: 10px; }
         .control-panel { background: #333; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
@@ -10,26 +10,44 @@
         input { width: 65px; padding: 6px; font-size: 16px; border-radius: 5px; border: 1px solid #555; text-align: center; background: #222; color: #fff; }
         #mDisplay { font-size: 32px; color: #ffcc00; font-weight: bold; margin: 5px 0; }
         #noteInfo { font-size: 18px; color: #00ffcc; margin-bottom: 10px; min-height: 20px; }
+        
         #fb-container { position: relative; width: 320px; margin: 10px auto; }
         .string-labels { display: flex; justify-content: space-around; width: 300px; margin: 0 auto 8px; font-weight: bold; color: #777; }
+        
+        /* 指板のデザイン復活 */
         #fingerboard { position: relative; width: 300px; height: 600px; background: #3d2b1f; margin: 0 auto; border-radius: 8px; border: 5px solid #1a110a; overflow: hidden; }
+        
+        /* 音域ブロックの復活 */
+        .zone { position: absolute; width: 100%; left: 0; opacity: 0.18; pointer-events: none; }
+        .zone-low { top: 0; height: 180px; background-color: #44ff44; } 
+        .zone-mid { top: 180px; height: 180px; background-color: #4444ff; } 
+        .zone-high { top: 360px; height: 240px; background-color: #ff4444; } 
+        
         .fret { position: absolute; width: 100%; height: 1px; background: rgba(255,255,255,0.15); left: 0; }
         .string { position: absolute; width: 2px; height: 100%; background: #ccc; top: 0; }
+        
+        /* 指形マーカーの進化 */
         .finger-marker { 
-            position: absolute; width: 46px; height: 46px; background: #ffcc00; 
+            position: absolute; width: 48px; height: 48px; background: #ffcc00; 
             border-radius: 50%; display: none; transform: translate(-50%, -50%);
-            align-items: center; justify-content: center; font-size: 24px; 
+            align-items: center; justify-content: center; font-size: 26px; 
             font-weight: bold; color: #000; box-shadow: 0 0 20px #ffcc00; z-index: 10;
         }
-        .finger-marker.ext-mode { border: 4px double #fff; background: #ffaa00; }
+        /* 拡張(ext)のスタイル: ↔︎を表示し、形を少し変える */
+        .finger-marker.ext-mode { border: 4px double #fff; background: #ffaa00; box-shadow: 0 0 25px #ffaa00; }
+        /* 親指(thumb)のスタイル: Qを表示し、水色に光る */
         .finger-marker.thumb-mode { border: 4px solid #fff; background: #00ffcc; box-shadow: 0 0 30px #00ffcc; }
-        #startBtn { font-size: 22px; padding: 15px 50px; cursor: pointer; border-radius: 40px; background: #28a745; color: white; border: none; margin-top: 10px; }
+        
+        #startBtn { font-size: 22px; padding: 15px 50px; cursor: pointer; border-radius: 40px; background: #28a745; color: white; border: none; margin-top: 10px; transition: 0.3s; }
+        #startBtn:active { transform: scale(0.95); }
+        #startBtn.playing { background: #dc3545; }
     </style>
 </head>
 <body>
+
     <div class="control-panel">
         <div class="input-group">
-            範囲: <input type="number" id="startM" value="41"> 〜 <input type="number" id="endM" value="56"> 小節
+            練習範囲: <input type="number" id="startM" value="41"> 〜 <input type="number" id="endM" value="56"> 小節
         </div>
         <div class="input-group">
             速度 (BPM): <input type="number" id="bpm" value="80">
@@ -37,9 +55,12 @@
         <div id="mDisplay">小節: --</div>
         <div id="noteInfo">音名: --</div>
     </div>
+
     <div id="fb-container">
         <div class="string-labels"><span>C</span><span>G</span><span>D</span><span>A</span></div>
         <div id="fingerboard">
+            <div class="zone zone-low"></div><div class="zone zone-mid"></div><div class="zone zone-high"></div>
+            
             <div class="fret" style="top: 60px;"></div><div class="fret" style="top: 120px;"></div>
             <div class="fret" style="top: 180px;"></div><div class="fret" style="top: 240px;"></div>
             <div class="fret" style="top: 300px;"></div><div class="fret" style="top: 360px;"></div>
@@ -49,6 +70,7 @@
             <div id="marker" class="finger-marker"></div>
         </div>
     </div>
+
     <button id="startBtn">演奏開始</button>
 
     <script>
@@ -79,6 +101,7 @@
             if (!freq || !audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
+            osc.type = 'triangle';
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
             gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
@@ -97,12 +120,16 @@
             marker.classList.remove('thumb-mode', 'ext-mode');
             
             if (data.finger === 0) {
+                // ハイポジション(pos>=360)または明示的なthumb指定があればQ
                 if (data.pos >= 360 || data.form === "thumb") {
                     fingerVal = "Q"; marker.classList.add('thumb-mode');
                 } else { fingerVal = "0"; }
             } else if (data.form === "ext") {
-                marker.classList.add('ext-mode'); fingerVal += " ↔";
+                // 拡張表示
+                marker.classList.add('ext-mode');
+                fingerVal = fingerVal + " ↔";
             }
+
             marker.innerText = fingerVal;
             document.getElementById('mDisplay').innerText = "小節: " + data.m;
             document.getElementById('noteInfo').innerText = "音名: " + data.note;
@@ -123,17 +150,17 @@
             timer = setInterval(step, 60000 / bpmValue);
         }
 
-        document.getElementById('bpm').addEventListener('input', () => { if (isPlaying) updateTimer(); });
-
         document.getElementById('startBtn').addEventListener('click', () => {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (isPlaying) {
                 clearInterval(timer); isPlaying = false;
                 document.getElementById('startBtn').innerText = "演奏再開";
+                document.getElementById('startBtn').classList.remove('playing');
             } else {
                 if (audioCtx.state === 'suspended') audioCtx.resume();
                 isPlaying = true;
                 document.getElementById('startBtn').innerText = "停止";
+                document.getElementById('startBtn').classList.add('playing');
                 updateTimer();
             }
         });
